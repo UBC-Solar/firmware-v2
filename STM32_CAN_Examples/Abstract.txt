@@ -1,0 +1,31 @@
+The 'CAN' project is a simple program for the STM32F103RBT6 
+using Keil 'MCBSTM32' Evaluation Board and demonstrates 
+the use of the CAN peripheral.
+
+Example functionality:                                                   
+ - Clock Settings:
+   - XTAL    =            8.00 MHz
+   - SYSCLK  =           72.00 MHz
+   - HCLK    = SYSCLK  = 72.00 MHz
+   - PCLK1   = HCLK/2  = 36.00 MHz
+   - PCLK2   = HCLK    = 72.00 MHz
+   - ADCLK   = PCLK2/6 = 12.00 MHz
+   - SYSTICK = HCLK/8  =  9.00 MHz
+
+ - CAN controller speed: 500 kbits
+ - send converted analog value in first byte in CAN message 
+ - display received and transmitted byte values on LCD display
+
+This example shows how to use CAN peripheral and how to 
+simulate analog input in uVision.
+
+You may change the value of analog input with potentiometer
+
+The CAN example is available in different targets:
+  Simulator:   - configured for software Simulator
+  MCBSTM32:    - runs from Internal Flash located on chip
+                 (used for production or target debugging)
+
+Notes:      
+  - to use this example on real CAN network remove 
+    CAN_testmode line from CanDemo.c file
