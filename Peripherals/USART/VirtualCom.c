@@ -1,8 +1,7 @@
 /**
  * Function implementations for enabling virtual com logging.
  */
-
-#include "stm32f10x.h"
+ 
 #include "VirtualCom.h"
 
 /**
