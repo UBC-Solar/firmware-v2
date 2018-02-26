@@ -336,7 +336,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\Peripherals</IncludePath>
+              <IncludePath>..\Peripherals\virtual_com</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -391,14 +391,14 @@
           <GroupName>Peripherals</GroupName>
           <Files>
             <File>
-              <FileName>VirtualCom.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\Peripherals\USART\VirtualCom.h</FilePath>
+              <FileName>virtual_com.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Peripherals\virtual_com\virtual_com.c</FilePath>
             </File>
             <File>
-              <FileName>VirtualCom.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Peripherals\USART\VirtualCom.c</FilePath>
+              <FileName>virtual_com.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Peripherals\virtual_com\virtual_com.h</FilePath>
             </File>
           </Files>
         </Group>
