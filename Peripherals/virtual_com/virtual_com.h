@@ -16,8 +16,6 @@
 
 #include "stm32f10x.h"
 
-#define NEWLINE 0xA
-
 /**
  * Initializes virtual com.
  */
