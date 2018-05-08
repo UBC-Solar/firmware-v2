@@ -10,7 +10,8 @@ void VirtualComInit()
 {
 	// Enable GPIOA clock, AFIO
 	RCC->APB2ENR |= 0x5UL;
-	GPIOA->CRL = 0x4B00UL;
+	GPIOA->CRL &= ~(0xFF00UL);
+	GPIOA->CRL |= 0x4B00UL;
 	
 	// Enable USART2 clock
 	RCC->APB1ENR |= (0x1UL << 17);

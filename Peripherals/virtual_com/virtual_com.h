@@ -16,6 +16,8 @@
 
 #include "stm32f10x.h"
 
+#ifndef VIRTUAL_COM
+#define VIRTUAL_COM
 /**
  * Initializes virtual com.
  */
@@ -47,3 +49,4 @@ void SendInt(uint32_t i);
  * Sends a new line through USART
  */
 void SendLine(void);
+#endif
