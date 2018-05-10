@@ -19,10 +19,10 @@ CAN_msg_t CAN_rx_msg;
 CAN_msg_t CAN_tx_msg;
 
 // Hardware mocks are not used in this test, since there is 
-// no point in having an object populate the CAN registers, 
-// just to test functions that perform the exact instructions
-// but in inverse. Instead, expected register values will be 
-// written directly to the registers.
+// no point in having an object populate the CAN registers
+// based on the contents of a CAN struct, just to test functions
+// that perform the exact instructions but in reverse. Instead,
+//  expected register values will be written directly to the registers.
 
 /**
  * Test the CANReceive() function.

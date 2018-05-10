@@ -13,7 +13,8 @@
  * any struct referenced to in the source file must be declared here.
  * 
  */
- typedef struct
+ 
+typedef struct
 {
 	uint32_t EVCR;
 	uint32_t MAPR;
