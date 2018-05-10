@@ -336,7 +336,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\Peripherals\virtual_com</IncludePath>
+              <IncludePath>..\Peripherals\virtual_com;..\Peripherals\CAN</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -391,14 +391,24 @@
           <GroupName>Peripherals</GroupName>
           <Files>
             <File>
-              <FileName>virtual_com.c</FileName>
+              <FileName>CAN.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Peripherals\CAN\CAN.h</FilePath>
+            </File>
+            <File>
+              <FileName>CAN.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Peripherals\virtual_com\virtual_com.c</FilePath>
+              <FilePath>..\Peripherals\CAN\CAN.c</FilePath>
             </File>
             <File>
               <FileName>virtual_com.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\Peripherals\virtual_com\virtual_com.h</FilePath>
+            </File>
+            <File>
+              <FileName>virtual_com.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Peripherals\virtual_com\virtual_com.c</FilePath>
             </File>
           </Files>
         </Group>

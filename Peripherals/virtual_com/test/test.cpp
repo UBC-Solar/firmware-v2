@@ -12,8 +12,8 @@ using namespace std;
 
 // Since these register pointers were only declared,
 // they must be defined here.
-RCC_Mock*  RCC = new RCC_Mock;
-GPIO_Mock* GPIOA = new GPIO_Mock;
+RCC_Mock*   RCC    = new RCC_Mock;
+GPIO_Mock*  GPIOA  = new GPIO_Mock;
 USART_Mock* USART2 = new USART_Mock;
 
 HardwareMock* mock = new HardwareMock();
