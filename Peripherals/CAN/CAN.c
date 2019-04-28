@@ -22,8 +22,9 @@
 	 
 	// Set bit rates 
 	CAN1->BTR &= ~(((0x03) << 24) | ((0x07) << 20) | ((0x0F) << 16) | (0x1FF)); 
-	CAN1->BTR |=  (((4-1) & 0x07) << 20) | (((15-1) & 0x0F) << 16) | ((45-1) & 0x1FF);
+	CAN1->BTR |=  (((2-1) & 0x07) << 20) | (((9-1) & 0x0F) << 16) | ((6-1) & 0x1FF);
  
+
 	// Configure Filters
 	CAN1->FMR  |=   0x1UL;                // Set to filter initialization mode
 	CAN1->FA1R &= ~(0x1UL);               // Deactivate filter 0
@@ -41,11 +42,11 @@
 	while (CAN1->MSR & 0x1UL); 
  
   //Set up CAN interrupts
- 	NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
-	NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
+ //	NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
+//	NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
 	
-	CAN1->IER |= 0x1UL << 4;
-	CAN1->IER |= 0x1UL;
+//	CAN1->IER |= 0x1UL << 4;
+//	CAN1->IER |= 0x1UL;
  
  }
  

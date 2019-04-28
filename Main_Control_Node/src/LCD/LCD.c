@@ -233,7 +233,7 @@ void OutputString(char Str[], uint8_t starting_x, uint8_t starting_y)
 void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y)
 {
 		uint8_t i;
-    char str[5] = {' ',' ',' ','0','\0'};
+    char str[5] = {' ',' ',' ',' ','\0'};
 		char decplace[2] = {' ', '\0'};
 		
 		if (num < 0){
@@ -241,20 +241,22 @@ void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y)
 			num = -1 * num;
 		}
 		
-    for (i = 2; num != 0; i--){
+    for (i = 3; num != 0; i--){
         str[i] = "0123456789"[num%10];
         num = num/10;
     }
 		OutputString(str, x, y);
 		
 		//Output 1 decimal place
-		OutputString(".", x + 3, y);
+		OutputString(".", x + 12, y);
 		while (dec > 10){
 			dec = dec/10;
 		}
 		decplace[0] = "0123456789"[dec];		
-		OutputString(decplace, x + 4, y);
+		OutputString(decplace, x + 15, y);
 }
+
+
 /*
  *Periodically called to change the value of the Charge or Speed display bar
  *@Param num: The number to be represented
@@ -283,39 +285,40 @@ void SetBar(uint8_t num, uint8_t max, uint8_t y)
  */
 void SingleScreen(void)
 {
+	
 	//Clears the screen
   ClearScreen();
 
 	//Battery Pack Current(BMS)
 	OutputString("-000.0", XPOS_0, YPOS_0);	
-	OutputString("A", 16, 0);
+	OutputString("A", 18, 0);
   
 	//Battery Pack Voltage(BMS)
 	OutputString("-000.0", XPOS_0, YPOS_3);
-	OutputString("V", 16, 3);
+	OutputString("V", 18, 3);
 	
-	//Maximum Temperature in the Battery(BMS)
+	//Motor Current(Motor Controller)
 	OutputString("-000.0", XPOS_0, YPOS_6);
-	OutputString("C", 16, 6);
-
+	OutputString("A", 18, 6);
+	
 	//Vehicle Speed(Motor Controller)
 	OutputString("-000.0", XPOS_0, YPOS_9);
-	OutputString("KMH", 16, 9);
+	OutputString("KMH", 18, 9);
+	
+	//Maximum Temperature in the Battery(BMS)
+	OutputString("-000.0", XPOS_20, YPOS_6);
+	//OutputString("C", 37, 0);
 	
 	//Maximum Temperature in the Array(Array)
 	OutputString("-000.0", XPOS_20, YPOS_0);
-	OutputString("C", 36, 0);
+	//OutputString("C", 37, 3);
 	
 	//MDU Temperature(Motor Controller)
 	OutputString("-000.0", XPOS_20, YPOS_3);
-	OutputString("C", 20, 3);
-	
-	//Motor Current(Motor Controller)
-	OutputString("-000.0", XPOS_20, YPOS_6);
-	OutputString("A", 20, 6);
-	
+	//OutputString("C", 37, 6);
+
 	//State of Charge Bar in percentage (BMS)
-	SetBar(0, 100, YPOS_12);
+	SetBar(100, 100, YPOS_12);
 }
 
 /* 
@@ -332,66 +335,6 @@ void UpdateScreenParameter(uint8_t x, uint8_t y, int32_t integerValue, uint8_t d
 	
 	//Insert the new number
 	OutputPaddedInteger(integerValue, decValue, x, y);
-}
-
-/*
- *Displays first output screen. called by button-press interrupt
- */
-void FirstScreen(void)
-{
-  //Clears the screen
-  ClearScreen();
-
-  //Set Structure for First Screen
-	
-	//Battery Pack Current(BMS)
-  OutputString("BAT CRNT:", 0, 0);
-  OutputString("A", 38, 0);
-	OutputString("-000.0", XPOS_20, YPOS_0);	
-  
-	//Battery Pack Voltage(BMS)
-  OutputString("BAT VLTG:", 0, 3);
-  OutputString("V", 38, 3);
-	OutputString("-000.0", XPOS_20, YPOS_0);
-	
-	//Maximum Temperature in the Battery(BMS)
-  OutputString("BAT MXTP:", 0, 6);
-  OutputString("C", 38, 6);
-	OutputString("-000.0", XPOS_20, YPOS_0);
-	
-	//Maximum Temperature in the Array(Array)
-  OutputString("ARR MXTP:",0, 9);
-	OutputString("C", 38, 9);
-	OutputString("-000.0", XPOS_20, YPOS_0);
-  	
-}
-
-/*
- * displays second output screen. called by button-press interrupt
- */
-void SecondScreen(void)
-{
-  ClearScreen();
-	
-	//Vehicle Speed(Motor Controller)
-  OutputString("MDU SPD:", 0, 0);
-	OutputString("KMH", 34, 0);
-	OutputString("-000.0", XPOS_0, YPOS_0);
-	
-	//MDU Temperature(Motor Controller)
-	OutputString("MDU TMP:", 0, 3);
-	OutputString("C", 38, 3);
-	OutputString("-000.0", XPOS_0, YPOS_3);
-	
-	//Motor Current(Motor Controller)
-	OutputString("MTR CRNT:", 0, 6);
-	OutputString("A", 38, 6);
-	OutputString("-000.0", XPOS_0, YPOS_6);
-	
-	//State of Charge Bar in percentage (BMS)
-	OutputString("SOC", XPOS_0, YPOS_9);
-	SetBar(0, 100, YPOS_12);
-  
 }
 
 /*Write a byte of data through C3 to C10(Data Buses)
@@ -458,19 +401,13 @@ void InitialiseLCDPins(void)
 	GPIOC->BRR = 0x1UL << 11;	 // C11 LOW
 	GPIOC->BSRR = 0x1UL << 12;  //C12 HIGH
 	
-	//Initialise Button
-	// Set C13(BUTTON) to input 
-  GPIOC->CRH |= 0x8UL << 20;				//SET pin C13 in GPIOC to input pullup
-  GPIOC->BSRR = 0x1 << 13;					//RESET input data register
-	
-
-	
 }
 
 
 //Initialise screen settings and character bit maps
 void ScreenSetup(void)
 {
+	
 	// system setup (section 6-2-1 on raio datasheet)
   TransmitCommand(0x40);
     Delay(5);

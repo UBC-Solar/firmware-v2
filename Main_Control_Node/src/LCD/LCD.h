@@ -15,6 +15,7 @@ Header file containing all constants and function declarations to the LCD
 
 #define XPOS_0 0
 #define XPOS_20 20
+#define XPOS_22 22
 
 #define YPOS_0 0
 #define YPOS_3 3
@@ -74,10 +75,6 @@ void ClearScreen(void);
  * Displays all information in a single screen
  */
 void SingleScreen(void);
-//Displays first output screen. called by button-press interrupt
-void FirstScreen(void);
-//displays second output screen. called by button-press interrupt
-void SecondScreen(void);
 /*Periodically called to update numerical values on the screen
  *@Param screen_state: The current state of the screen (Screen1 or Screen2)
  *@Param values[]:	An array of values to display on the appropriate screen

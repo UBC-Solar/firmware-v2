@@ -1,8 +1,8 @@
 #include "XBee.h"
 
-/** Initializes the STM32 UART on GPIO B10 and B11 to a baudrate of 9600
-
-**/
+/**
+ * Initializes the STM32 UART on GPIO B10 and B11 to a baudrate of 9600
+ */
 void uart_init(void)
 {
 
@@ -24,10 +24,10 @@ void uart_init(void)
 	USART3->CR1 |= 0x1 << 13;
 }
 
-/** Transmits a CAN message via the previously initialized STM32 UART
-		
-Passes: An instance of the can_msg_t data type
-**/
+/**
+ * Transmits a CAN message via the previously initialized STM32 UART
+ * Passes: An instance of the can_msg_t data type
+ */
 void XBeeTransmitCan(can_msg_t* msg_tx)
 {
 	//Timestamp: 4 bytes
@@ -43,11 +43,12 @@ void XBeeTransmitCan(can_msg_t* msg_tx)
 	}
 
 	//CAN ID: 2 bytes
-	//uint8_t ID_H = 0xFFUL & ( msg_tx->id >> 8);
-	//uint8_t ID_L = 0xFFUL & ( msg_tx->id);
+	uint8_t ID_H = 0xFFUL & ( msg_tx->id >> 8);
+	uint8_t ID_L = 0xFFUL & ( msg_tx->id);
 	
-	//XBeeSendChar(ID_H);
-	//XBeeSendChar(ID_L);
+	XBeeSendChar(ID_H);
+	XBeeSendChar(ID_L);
+	
 	XBeeSendChar(time[0]);
 	XBeeSendChar(time[1]);
 	
@@ -70,14 +71,13 @@ void XBeeTransmitCan(can_msg_t* msg_tx)
 	
 }
 
-/** Outputs a character in 2 bytes according to its ASCII value
-		For example, 'A' is referenced in ASCII as 0x41, so 4 and 1 are sent
-		as individual bytes.
-		'z' is referenced in ASCII as 0x7A, so 7 and A are sent in individual
-		bytes
-
-Passes: a character (1 byte) that is to be represented in ASCII
-**/
+/**
+ * Outputs a character in 2 bytes according to its ASCII value
+ * For example, 'A' is referenced in ASCII as 0x41, so 4 and 1 are sent
+ * as individual bytes.
+ * 'z' is referenced in ASCII as 0x7A, so 7 and A are sent in individual
+ * bytes
+ */
 void XBeeSendChar(char c)
 {
 	
@@ -90,12 +90,12 @@ void XBeeSendChar(char c)
 	
 }
 
-
-/*Ouputs the raw character written here.
-	If the parameter is 'A', output to console 'A'
-
-Passes: a character (1 byte) that will appear on a serial monitor
-*/
+/**
+ * Outputs the raw character written here
+ * 	If the parameter is 'A', output to console 'A'
+ * 
+ * Passes: a character (1 byte) that will appear on a serial monitor
+ */
 void XBeeSendByte(char c)
 {
 	// Write half-byte to data register
