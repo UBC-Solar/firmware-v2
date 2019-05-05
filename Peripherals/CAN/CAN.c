@@ -17,13 +17,14 @@
 	GPIOB->CRH   &= ~(0xFFUL);
 	GPIOB->CRH   |= 0xB8UL;			// Configure PB8 and PB9
 	GPIOB->ODR |= 0x1UL << 8;
- 
+  
 	CAN1->MCR     = 0x11UL;      // Set CAN to initialization mode
 	 
 	// Set bit rates 
 	CAN1->BTR &= ~(((0x03) << 24) | ((0x07) << 20) | ((0x0F) << 16) | (0x1FF)); 
-	CAN1->BTR |=  (((4-1) & 0x07) << 20) | (((15-1) & 0x0F) << 16) | ((45-1) & 0x1FF);
+	CAN1->BTR |=  (((2-1) & 0x07) << 20) | (((9-1) & 0x0F) << 16) | ((6-1) & 0x1FF);
  
+
 	// Configure Filters
 	CAN1->FMR  |=   0x1UL;                // Set to filter initialization mode
 	CAN1->FA1R &= ~(0x1UL);               // Deactivate filter 0
@@ -39,6 +40,7 @@
 	CAN1->FMR   &= ~(0x1UL);			  // Deactivate initialization mode
 	CAN1->MCR   &= ~(0x1UL);              // Set CAN to normal mode 
 	while (CAN1->MSR & 0x1UL); 
+ 
  }
  
 /**
@@ -103,5 +105,4 @@
  uint8_t CANMsgAvail(void)
  {
 	 return CAN1->RF0R & 0x3UL;
- }
- 
+}
