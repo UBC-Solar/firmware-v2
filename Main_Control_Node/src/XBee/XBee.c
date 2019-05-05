@@ -3,19 +3,19 @@
 /**
  * Initializes the STM32 UART on GPIO B10 and B11 to a baudrate of 9600
  */
-void uart_init(void)
+void XBeeInit(void)
 {
 
 	// Enable GPIOA clock, AFIO
 	RCC->APB2ENR |= 0x9UL;			//Enables Port B Clock and AFIO Clock
-	GPIOB->CRH &= ~(0xFF00UL);	//B11: Floating Input
+	GPIOB->CRH &= ~(0xFF00UL);	    //B11: Floating Input
 	GPIOB->CRH |= 0x4B00UL;			//B10: Push-Pull, Output 50MHZ
 	
-	RCC->APB1ENR |= (0x1UL << 18);		//Enable USART 3 CLock
+	RCC->APB1ENR |= (0x1UL << 18);	//Enable USART 3 CLock
 	
 	USART3->CR2 = 0;									
 	USART3->CR3 = 0;									
-	USART3->CR1 |= 0xC;								//Transmitter and Receiver Enable
+	USART3->CR1 |= 0xC;				//Transmitter and Receiver Enable
 
 	// By Default, set baudrate to 9600
 	USART3->BRR = 0xEA6UL;
@@ -28,7 +28,7 @@ void uart_init(void)
  * Transmits a CAN message via the previously initialized STM32 UART
  * Passes: An instance of the can_msg_t data type
  */
-void XBeeTransmitCan(can_msg_t* msg_tx)
+void XBeeTransmitCan(CAN_msg_t* msg_tx)
 {
 	//Timestamp: 4 bytes
 	uint8_t time[2];

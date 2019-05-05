@@ -11,29 +11,6 @@
 #define MC_BASE 0x200
 #define ARR_BASE 0x700
 
-uint8_t canTxReady = FALSE;
-uint8_t canRxReady = FALSE;
-
-CAN_msg_t CAN_rx_msg;  // Holds receiving CAN messages
-CAN_msg_t CAN_tx_msg;  // Holds transmitted CAN messages
-
-/**
- * Interrupt Handler to receiver a new message
- */
-void USB_LP_CAN1_RX0_IRQHandler(void)
-{
-	canRxReady = TRUE;
-}
-
-/**
- * Interrupt Handler to transmit a new message
- */
-void USB_HP_CAN1_TX_IRQHandler(void)
-{
-	canTxReady = TRUE;
-}
-
-
 /**
  * Initialize Dashboard LED lights
  */
@@ -48,18 +25,6 @@ void InitLEDs(void)
 	GPIOA->BSRR = 0xFFFF;
 	GPIOA->BRR = 0x1 << 5;
 	
-	/*
-	RCC->APB2ENR |= 0x1UL << 3;			//Initialize clock for GPIOB, if it hasn't been initialized yet
-	RCC->APB2ENR  |= 0x1UL;					//ENABLE Alternate Function I/O Clock
-	
-	AFIO->EXTICR[0] |= 0x1110UL;
-	EXTI->IMR |= 0xEUL;
-	EXTI->FTSR |= 0xEUL;
-	NVIC_EnableIRQ(EXTI1_IRQn);
-	NVIC_EnableIRQ(EXTI2_IRQn);
-	NVIC_EnableIRQ(EXTI3_IRQn);
-	*/
-	
 }
 
 /**
@@ -70,7 +35,7 @@ int main(void)
 	
 	float tempFloat;
 	int32_t tempInt32;
-	can_msg_t newCanMsg;
+	CAN_msg_t newCanMsg;
 	uint8_t c;
 	
 	InitialiseLCDPins();
@@ -78,10 +43,7 @@ int main(void)
 	ScreenSetup();
 	InitLEDs();
 	VirtualComInit();
-	uart_init();
-	
-	SendString("Hello");
-	SendLine();
+	XBeeInit();
 	
 	while(1)
 	{
@@ -197,9 +159,6 @@ int main(void)
 				//Battery: Faults, Battery High and Battery Low (For Dashboard Indicator)
 				case 0x622:
 					
-					SendString("622");
-					SendLine();
-					
 					//A10: Check if the high voltage bit is set, meaning battery is full
 					if ( (CAN_rx_msg.data[6] >> 1) & 0x1)
 					{
@@ -267,13 +226,6 @@ int main(void)
 					break;
 							
 			}		
-		}
-			
-		//If a message can be transmitted,
-		if (canTxReady)
-		{
-
-			CANSend(&CAN_tx_msg);
 		}
 		
 	}

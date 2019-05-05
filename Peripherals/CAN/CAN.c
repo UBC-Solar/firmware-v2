@@ -41,13 +41,6 @@
 	CAN1->MCR   &= ~(0x1UL);              // Set CAN to normal mode 
 	while (CAN1->MSR & 0x1UL); 
  
-  //Set up CAN interrupts
- //	NVIC_EnableIRQ(USB_LP_CAN1_RX0_IRQn);
-//	NVIC_EnableIRQ(USB_HP_CAN1_TX_IRQn);
-	
-//	CAN1->IER |= 0x1UL << 4;
-//	CAN1->IER |= 0x1UL;
- 
  }
  
 /**

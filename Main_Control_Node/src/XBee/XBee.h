@@ -1,24 +1,18 @@
 #include "stm32f10x.h"
+#include "CAN.h"
 
 #define CAN_MSG_SIZE (uint8_t) 17;
 #define CAN_DATA_SIZE 8;
 
-typedef struct
-{
-	uint16_t 	id;
-	uint8_t 	data[8];
-	uint8_t 	len;	
-} can_msg_t;
-
 /**
  * Initializes the STM32 UART on GPIO B10 and B11 to a baudrate of 9600
  */
-void uart_init(void);
+void XBeeInit(void);
 /**
  * Transmits a CAN message via the previously initialized STM32 UART
  * Passes: An instance of the can_msg_t data type
  */
-void XBeeTransmitCan(can_msg_t* can_tx_msg);
+void XBeeTransmitCan(CAN_msg_t* can_tx_msg);
 /**
  * Outputs a character in 2 bytes according to its ASCII value
  * For example, 'A' is referenced in ASCII as 0x41, so 4 and 1 are sent
