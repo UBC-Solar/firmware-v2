@@ -106,8 +106,3 @@
  {
 	 return CAN1->RF0R & 0x3UL;
 }
- 
-
-
-
-

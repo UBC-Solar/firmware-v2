@@ -27,4 +27,4 @@ void XBeeSendChar(char c);
  * 
  * Passes: a character (1 byte) that will appear on a serial monitor
  */
-
+void XBeeSendByte(char c);

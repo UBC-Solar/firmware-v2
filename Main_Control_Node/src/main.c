@@ -11,6 +11,9 @@
 #define MC_BASE 0x200
 #define ARR_BASE 0x700
 
+
+CAN_msg_t CAN_rx_msg;
+
 /**
  * Initialize Dashboard LED lights
  */
@@ -60,7 +63,7 @@ int main(void)
 				
 				//Battery: Pack Voltage(For LCD Display)
 				case 0x623:
-					UpdateScreenParameter(XPOS_0, YPOS_3, 0xFFFF & (CAN_rx_msg.data[1] | CAN_rx_msg.data[0] << 8), 0);
+					UpdateScreenParameter(BATTERY_VOLTAGE_XPOS, BATTERY_VOLTAGE_YPOS, 0xFFFF & (CAN_rx_msg.data[1] | CAN_rx_msg.data[0] << 8), 0);
 									
 					newCanMsg.id = 0x623;
 					for (c = 0; c < 8; c++)
@@ -74,7 +77,7 @@ int main(void)
 				//Battery: Pack Current(For LCD Display)
 				case 0x624:
 					
-					UpdateScreenParameter(XPOS_0, YPOS_0, 0xFFFF & (CAN_rx_msg.data[1] | CAN_rx_msg.data[0] << 8), 0);
+					UpdateScreenParameter(BATTERY_CURRENT_XPOS, BATTERY_CURRENT_YPOS, 0xFFFF & (CAN_rx_msg.data[1] | CAN_rx_msg.data[0] << 8), 0);
 					
 					newCanMsg.id = 0x624;					
 					for (c = 0; c < 8; c++)
@@ -87,7 +90,7 @@ int main(void)
 				
 				//Battery: Pack Maximum Temperature (For LCD Display)
 				case 0x627:
-					UpdateScreenParameter(XPOS_20, YPOS_6, 0xFFFF & CAN_rx_msg.data[4], 0);
+					UpdateScreenParameter(BATTERY_MAXTEMP_XPOS, BATTERY_MAXTEMP_YPOS, 0xFFFF & CAN_rx_msg.data[4], 0);
 				
 					newCanMsg.id = 0x627;					
 					for (c = 0; c < 8; c++)
@@ -102,7 +105,7 @@ int main(void)
 				case 0x626:
 					
 					//This one is different; it is used to set a battery percentage bar
-					SetBar(0xFF & CAN_rx_msg.data[0], 128, YPOS_12);
+					SetBar(0xFF & CAN_rx_msg.data[0], 128, CHARGE_BAR_YPOS);
 				
 					newCanMsg.id = 0x624;					
 					for (c = 0; c < 8; c++)
@@ -123,7 +126,7 @@ int main(void)
 					{
 						tempFloat = tempFloat / 10;
 					}
-					UpdateScreenParameter(XPOS_0, YPOS_9, tempInt32, (uint8_t) tempFloat * 10);
+					UpdateScreenParameter(MOTOR_SPEED_XPOS, MOTOR_SPEED_YPOS, tempInt32, (uint8_t) tempFloat * 10);
 					break;
 				
 				//Motor Drive Unit: Temperature (For LCD Display) 1s
@@ -134,7 +137,7 @@ int main(void)
 					{
 						tempFloat = tempFloat / 10;
 					}					
-					UpdateScreenParameter(XPOS_20, YPOS_3, tempInt32, (uint8_t) tempFloat * 10);
+					UpdateScreenParameter(MOTOR_TEMP_XPOS, MOTOR_TEMP_YPOS, tempInt32, (uint8_t) tempFloat * 10);
 					break;
 					
 				//Motor Drive Unit: Current (For LCD Display) 200ms
@@ -146,14 +149,14 @@ int main(void)
 					{
 						tempFloat = tempFloat / 10;
 					}					
-					UpdateScreenParameter(XPOS_0, YPOS_6, tempInt32, (uint8_t) tempFloat * 10);
+					UpdateScreenParameter(MOTOR_CURRENT_XPOS, MOTOR_CURRENT_YPOS, tempInt32, (uint8_t) tempFloat * 10);
 					break;
 					
 				//Array: Maximum Temperature (For LCD Display)
 				case ARR_BASE:
 					//TODO: Waiting for array team to build their interface
 					
-					UpdateScreenParameter(XPOS_20, YPOS_0, 0, 0);
+					UpdateScreenParameter(ARRAY_MAXTEMP_XPOS, ARRAY_MAXTEMP_YPOS, 0, 0);
 					break;
 				
 				//Battery: Faults, Battery High and Battery Low (For Dashboard Indicator)
@@ -229,6 +232,4 @@ int main(void)
 		}
 		
 	}
-	
-	return 0;
 }
