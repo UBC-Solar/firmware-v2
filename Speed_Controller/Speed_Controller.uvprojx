@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\Peripherals\CAN;..\Peripherals\virtual_com</IncludePath>
+              <IncludePath>..\Peripherals\CAN;..\Peripherals\virtual_com;.\src\ADC;.\src\encoder</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
