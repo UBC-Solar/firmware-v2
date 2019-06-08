@@ -1,4 +1,5 @@
 #include "ADC.h"
+#include "virtual_com.h"
 
 /** 
  * Initializes an ADC for the regenerative braking toggle
@@ -34,6 +35,17 @@ void ADCInit(void){
  */
 uint16_t ReadADC(void){
 	
-	return 0xFFFF & ADC2->DR;
+	uint16_t ADC_reading = ADC2->DR;
+
+	if (ADC_reading > ADC_ZERO_THRESHOLD)
+	{
+		ADC_reading = 0x000;
+	}
+	else
+	{
+		ADC_reading = ADC_ZERO_THRESHOLD - ADC_reading;
+	}
+	
+	return ADC_reading;
 }
 
