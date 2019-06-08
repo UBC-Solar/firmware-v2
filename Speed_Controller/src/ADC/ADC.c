@@ -1,5 +1,8 @@
 #include "ADC.h"
 
+/** 
+ * Initializes an ADC for the regenerative braking toggle
+ */
 void ADCInit(void){
 	
 	// Init PA0 to analog input (0x0)
@@ -26,6 +29,9 @@ void ADCInit(void){
 	
 }
 
+/**
+ * Reads a value from the ADC
+ */
 uint16_t ReadADC(void){
 	
 	return 0xFFFF & ADC2->DR;

@@ -49,10 +49,9 @@ void TimerInit(int period){
  */
 void RestartTimer(void){
 	
-	TIM2->CR1 &= ~(0x1UL);		//disable TIM2
-	
+	TIM2->CNT = 0x1;
 	TIM2->CR1 |= 0x1UL;			//re-enable TIM2
-	
+
 }
 
 /**
@@ -62,19 +61,5 @@ void StopTimer(void){
 	
 	TIM2->CR1 &= ~(0x1UL);		//disable TIM2
 	
-}
-
-/**
- * Checks the timer status
- */
-int8_t CheckTimerStatus(void){
-	return timeoutFlag;
-}
-
-/**
- * Set the timer status
- */
-void SetTimerStatus(int8_t timerStatus){
-	timeoutFlag = timerStatus;
 }
 

@@ -27,12 +27,4 @@ void RestartTimer(void);
  */
 void StopTimer(void);
 
-/**
- * Checks the timer status
- */
-int8_t CheckTimerStatus(void);
-
-/**
- * Set the timer status
- */
-void SetTimerStatus(int8_t timerStatus);
+extern int8_t timeoutFlag;

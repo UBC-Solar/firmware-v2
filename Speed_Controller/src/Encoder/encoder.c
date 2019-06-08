@@ -1,5 +1,8 @@
 #include "encoder.h"
 
+/**
+ * Initializes the encoder for the accelerator pedal
+ */
 void EncoderInit (void) {
 	
 	//Initialize AFIO Clock
@@ -34,6 +37,9 @@ void EncoderInit (void) {
 	
 }
 
+/**
+ * Reads a value from the encoder
+ */
 uint16_t EncoderRead (void) {
 	
 	return TIM1->CNT;
