@@ -1,5 +1,7 @@
 #include "Timer.h"
 
+int8_t timeoutFlag = FALSE;
+
 /** Interrupt handler for Timer 2.
  */
 void TIM2_IRQHandler(void)
@@ -8,6 +10,7 @@ void TIM2_IRQHandler(void)
 	if (TIM2->SR & 0x1){
 		
 		//Set a flag for action here.
+		timeoutFlag = TRUE;
 			
 		TIM2->SR &= ~(0x1);		//reset the update interrupt flag
 	}
@@ -30,6 +33,8 @@ void TimerInit(int period){
 	TIM2->ARR = 10*period;		//set autoreload to reset every period
 	
 	TIM2->CR1 &= (0x11UL << 8);	//set the timer to use default clock division
+
+	TIM2->CR1 |= 0x1UL << 3;	//set the timer to use one pulse mode
 	
 	TIM2->CR1 |= 0x1UL;			//enable TIM2
 	
@@ -39,10 +44,37 @@ void TimerInit(int period){
 	
 }
 
-/** Resets the timer counter to a starting value
+/**
+ * Restarts the counter on the timer
  */
-void TimerReset(void){
+void RestartTimer(void){
 	
-	TIM2->CNT = 1;				//reset the counter to 1
+	TIM2->CR1 &= ~(0x1UL);		//disable TIM2
+	
+	TIM2->CR1 |= 0x1UL;			//re-enable TIM2
 	
 }
+
+/**
+ * Stops the counter on the timer
+ */
+void StopTimer(void){
+	
+	TIM2->CR1 &= ~(0x1UL);		//disable TIM2
+	
+}
+
+/**
+ * Checks the timer status
+ */
+int8_t CheckTimerStatus(void){
+	return timeoutFlag;
+}
+
+/**
+ * Set the timer status
+ */
+void SetTimerStatus(int8_t timerStatus){
+	timeoutFlag = timerStatus;
+}
+
