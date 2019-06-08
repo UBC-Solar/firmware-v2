@@ -17,7 +17,8 @@ int main(void){
 	CANInit();
 	EncoderInit();
 	ADCInit();
-	TimerInit(100);
+	//TimerInit(100);
+	
 	
 	CAN_msg_t CAN_drive;   
 	CAN_msg_t CAN_regen;   
@@ -26,28 +27,38 @@ int main(void){
 	CAN_drive.len = 8;
 	CAN_regen.len = 8;
 	
-	CAN_drive.id = DRIVE_CONTROL_ID + 2;
-	CAN_regen.id = DRIVE_CONTROL_ID + 2;
+	CAN_drive.id = DRIVE_CONTROL_ID + 1;
+	CAN_regen.id = DRIVE_CONTROL_ID + 1;
 	
 	u.float_var = 100.0;
 	
+	//set velocity to 100
 	CAN_drive.data[0] = u.chars[0];
 	CAN_drive.data[1] = u.chars[1];
 	CAN_drive.data[2] = u.chars[2];
 	CAN_drive.data[3] = u.chars[3];
 
-	
+	//set velocity to 0
 	CAN_regen.data[0] = 0;
 	CAN_regen.data[1] = 0;
 	CAN_regen.data[2] = 0;
 	CAN_regen.data[3] = 0;
+	
+	CAN_drive.data[4] = 0;
+	CAN_drive.data[5] = 0;
+	CAN_drive.data[6] = 0;
+	CAN_drive.data[7] = 0;
+	
+	CAN_regen.data[4] = 0;
+	CAN_regen.data[5] = 0;
+	CAN_regen.data[6] = 0;
+	CAN_regen.data[7] = 0;
 		
-	RCC->APB2ENR = 0x1 << 2;  //
-	GPIOA->CRL = 0x8 << 8;   //pinMode(A2, INPUT PULL_UP)
+	//RCC->APB2ENR |= 0x1 << 2;  //
+	//GPIOA->CRL |= 0x8 << 8;   //pinMode(A2, INPUT PULL_UP)
 	
-	
-	uint16_t encoder_reading;
-	uint16_t ADC_reading;
+	volatile uint16_t encoder_reading;
+	volatile uint16_t ADC_reading;
 	uint16_t old_ADC_reading = 0;
 	uint16_t old_encoder_reading = 0;
 	
@@ -55,15 +66,20 @@ int main(void){
 	{
 		
 		encoder_reading = EncoderRead();
+		if (encoder_reading > PEDAL_MAX){
+			encoder_reading = old_encoder_reading;
+		}
+		
 		ADC_reading = ReadADC();
-	
+		
 		//If regen is enabled AND ADC count changed, send new regen CAN message and restart timer
-		if( (((GPIOA->IDR) >> 2) & 0x1) && (old_ADC_reading != ADC_reading) )
+		//if( (((GPIOA->IDR) >> 2) & 0x1) && (old_ADC_reading != ADC_reading) )
+		if( old_ADC_reading != ADC_reading )
 		{
 			
-			StopTimer();
+			//StopTimer();
 			
-			u.float_var = (float)(ADC_reading/ADC_MAX);
+			u.float_var = (float)((float) ADC_reading/ADC_MAX);
 			CAN_regen.data[4] = u.chars[0];
 			CAN_regen.data[5] = u.chars[1];
 			CAN_regen.data[6] = u.chars[2];
@@ -71,42 +87,60 @@ int main(void){
 			
 			CANSend(&CAN_regen);  //send CAN message
 			
-			RestartTimer();   //restart the timer
+			//RestartTimer();   //restart the timer
 		}
 		
 		//if encoder count changed, send new drive CAN message and restart timer
 		else if(old_encoder_reading != encoder_reading)
 		{
 			
-			StopTimer();
+			//StopTimer();
 			
-			u.float_var = (float)(ADC_reading/ADC_MAX);
+			//change motor velocity
+			u.float_var = (float)( (float) encoder_reading/PEDAL_MAX);
+			if (u.float_var > 1.0 || u.float_var < 0.0){
+				u.float_var = 0.0;
+			}
+			
 			CAN_drive.data[4] = u.chars[0];
 			CAN_drive.data[5] = u.chars[1];
 			CAN_drive.data[6] = u.chars[2];
 			CAN_drive.data[7] = u.chars[3];
 			
+			
 			CANSend(&CAN_drive);
 			
-			RestartTimer();  //restart the timer
+			//RestartTimer();  //restart the timer
 		}
 		//if timeout occurred
+		/*
 		else if(CheckTimerStatus())
 		{
 			if(ADC_reading > 0)
 			{
 				CANSend(&CAN_regen);
-				RestartTimer();	
+				//RestartTimer();	
 			}
-			else
-			{
+			else{
 				CANSend(&CAN_drive);
-				RestartTimer();
+				//RestartTimer();
 			}
-			
 			SetTimerStatus(FALSE);
 		}
+		*/
+		else{
+			
+			if (ADC_reading > 0){
+				CANSend(&CAN_regen);
+			}
+			else{
+				CANSend(&CAN_drive);
+			}
+			
+		}
+		
 		old_ADC_reading = ADC_reading;
 		old_encoder_reading = encoder_reading;
+	
 	}
 }
