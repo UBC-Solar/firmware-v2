@@ -240,6 +240,19 @@ void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y)
         str[0] = '-';
         num = -1 * num;
     }
+	else if (num == 0)
+	{
+		str[3] = '0';
+	}
+	
+	if (num > 999)
+	{
+		num = 999;
+	}
+	else if (num < -999)
+	{
+		num = -999;
+	}
 		
     for (i = 3; num != 0; i--)
     {
@@ -252,10 +265,7 @@ void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y)
     //Output 1 decimal place
     OutputString(".", x + 12, y);
     
-    while (dec > 10)
-    {
-        dec = dec/10;
-    }
+    dec = dec % 10;
     
     decplace[0] = "0123456789"[dec];		
     OutputString(decplace, x + 15, y);
@@ -270,6 +280,7 @@ void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y)
  */
 void SetBar(uint8_t num, uint8_t max, uint8_t y)
 {
+	
     uint8_t blocks = 4*(num*10/max) + (num%10 >= 5)*2;
     
     MoveCursor(0, y);
