@@ -18,18 +18,18 @@ void TIM2_IRQHandler(void)
 }
 
 /** Initializes a timer to trigger a timing interrupt periodically
- * @param period: period for triggering the timing interrupt
+ * @param period: period for triggering the timing interrupt in ms
  */
 void TimerInit(int period){
 	
 	RCC->APB1ENR |= 0x1;		//enable TIM2
 	
-	TIM2->PSC = TIM2_PRESCALER;	//Processor speed is ~72MHZ, so set prescaler value for scaling,
-								//Clock frequency of 10kHz
+	TIM2->PSC = TIM2_PRESCALER;	//Processor speed is ~72MHZ, so set prescaler value for scaling, clock frequency of 10kHz
 	
 	TIM2->CR1 &= ~(0x1UL << 4);	//set counter to upcount
 	
 	TIM2->ARR &= 0;
+	
 	TIM2->ARR = 10*period;		//set autoreload to reset every period
 	
 	TIM2->CR1 &= (0x11UL << 8);	//set the timer to use default clock division
@@ -38,17 +38,14 @@ void TimerInit(int period){
 	
 	TIM2->CR1 |= 0x1UL;			//enable TIM2
 	
-	TIM2->DIER |= 0x1UL;		//enable timing interrupt
-	
+	TIM2->DIER |= 0x1UL;		//enable timing interrupt	
 	NVIC_EnableIRQ(TIM2_IRQn);	//setup interrupt handler
-	
 }
 
 /**
  * Restarts the counter on the timer
  */
-void RestartTimer(void){
-	
+void RestartTimer(void){	
 	TIM2->CNT = 0x1;
 	TIM2->CR1 |= 0x1UL;			//re-enable TIM2
 
@@ -57,8 +54,7 @@ void RestartTimer(void){
 /**
  * Stops the counter on the timer
  */
-void StopTimer(void){
-	
+void StopTimer(void){	
 	TIM2->CR1 &= ~(0x1UL);		//disable TIM2
 	
 }

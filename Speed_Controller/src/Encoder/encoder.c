@@ -42,6 +42,13 @@ void EncoderInit (void) {
  */
 uint16_t EncoderRead (void) {
 	
-	return TIM1->CNT;
+	uint16_t Encoder_Reading = TIM1->CNT;
+	
+	if (Encoder_Reading > PEDAL_MAX)
+	{
+		Encoder_Reading = 0;
+	}
+	
+	return Encoder_Reading;
 	
 }

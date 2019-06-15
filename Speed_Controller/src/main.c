@@ -116,18 +116,9 @@ int main(void){
 		else if(old_encoder_reading != encoder_reading && (ADC_reading == 0 || !regen_enabled))
 		{
 			
-			u.float_var = (float)( (float) encoder_reading/PEDAL_MAX);
+			StopTimer();
 			
-			//Any overflow should be treated as zero current to the motor
-			if (u.float_var > 1.0 || u.float_var < 0.0)
-			{
-				u.float_var = 0.0;
-			}
-			else
-			{
-				old_ADC_reading = ADC_reading;
-				old_encoder_reading = encoder_reading;				
-			}
+			u.float_var = (float)( (float) encoder_reading/PEDAL_MAX);
 			
 			CAN_drive.data[4] = u.chars[0];
 			CAN_drive.data[5] = u.chars[1];
@@ -135,6 +126,9 @@ int main(void){
 			CAN_drive.data[7] = u.chars[3];
 			
 			CANSend(&CAN_drive);
+			
+			old_ADC_reading = ADC_reading;
+			old_encoder_reading = encoder_reading;
 		
 			RestartTimer();
 		

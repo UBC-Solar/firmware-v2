@@ -17,7 +17,6 @@ void ADCInit(void){
 	// By default, CR1 is set correctly
 	ADC2->CR2 |= ADC_CR2_CONT;
 	
-	// TODO: check sample time to see diff
 	ADC2->SMPR2 |= 0x7UL;
 	
 	// Start ADC
