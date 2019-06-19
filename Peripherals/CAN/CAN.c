@@ -23,7 +23,6 @@
 	// Set bit rates 
 	CAN1->BTR &= ~(((0x03) << 24) | ((0x07) << 20) | ((0x0F) << 16) | (0x1FF)); 
 	CAN1->BTR |=  (((2-1) & 0x07) << 20) | (((15-1) & 0x0F) << 16) | ((2-1) & 0x1FF);
- 
 
 	// Configure Filters
 	CAN1->FMR  |=   0x1UL;                // Set to filter initialization mode

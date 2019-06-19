@@ -40,10 +40,10 @@ void InitLEDs(void)
 int main(void)
 {
 	
-	float tempFloat;
 	int32_t tempInt32;
 	CAN_msg_t newCanMsg;
-	uint8_t c;
+	uint8_t c = 0;
+	uint8_t d = 0;
 	
 	InitialiseLCDPins();
 	CANInit();
@@ -114,7 +114,14 @@ int main(void)
 							
 					UpdateScreenParameter(MOTOR_SPEED_XPOS, MOTOR_SPEED_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10 );
 					
-					XBeeTransmitCan(&CAN_rx_msg);
+					//send the CAN message once every second
+					if (d == 5)
+					{
+						XBeeTransmitCan(&CAN_rx_msg);
+						d = 0;
+					}
+					d++;
+					
 					break;
 				
 				//Motor Drive Unit: Temperature (For LCD Display). Values are IEEE 32-bit floating point in Celsius (C). Period: 1s
@@ -152,12 +159,18 @@ int main(void)
 						u.float_var = u.float_var * -1;
 					}
 					
-					XBeeTransmitCan(&CAN_rx_msg);
+					//Send the CAN message once every second
+					if (c == 5)
+					{
+						XBeeTransmitCan(&CAN_rx_msg);
+						c = 0;
+					}
+					c++;
 					
 					UpdateScreenParameter(MOTOR_CURRENT_XPOS, MOTOR_CURRENT_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10 );
 					break;
 					
-				//Array: Maximum Temperature (For LCD Display)
+					//Array: Maximum Temperature (For LCD Display). Values are 16-bit unsigned integer in Celsius(C). Period: 1s
 				case ARR_BASE:
 					//TODO: Waiting for array team to build their interface
 					

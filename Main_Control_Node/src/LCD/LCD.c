@@ -249,10 +249,6 @@ void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y)
 	{
 		num = 999;
 	}
-	else if (num < -999)
-	{
-		num = -999;
-	}
 		
     for (i = 3; num != 0; i--)
     {
