@@ -303,7 +303,7 @@ void DisplayScreen(void)
     ClearScreen();
 
 	//Battery Pack Current(BMS)
-	OutputString("-000.0", BATTERY_CURRENT_XPOS, BATTERY_CURRENT_YPOS);
+	OutputString("-111.1", BATTERY_CURRENT_XPOS, BATTERY_CURRENT_YPOS);
 	OutputString("A", BATTERY_CURRENT_UNIT_XPOS, BATTERY_CURRENT_UNIT_YPOS);
   
 	//Battery Pack Voltage(BMS)

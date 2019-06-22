@@ -7,6 +7,7 @@
 #include "Timer/Timer.h"
 
 #define DRIVE_CONTROL_ID 0x500
+#define BATTERY_FULL_MSG 0x622
 
 union {
 	float float_var;
@@ -59,7 +60,8 @@ int main(void){
 	CAN_regen.data[6] = 0;
 	CAN_regen.data[7] = 0;
 		
-	RCC->APB2ENR |= 0x1 << 4;  
+	RCC->APB2ENR |= 0x1 << 4;
+	GPIOC->CRH &=0;
 	GPIOC->CRH |= 0x4;
 	GPIOC->CRL |= 0x4 << 24;
 	
@@ -70,6 +72,7 @@ int main(void){
 	uint8_t regen_enabled;
 	uint8_t current_direction;
 	uint8_t previous_direction = 0;
+	CAN_msg_t CAN_rx_msg;
 	
 	while(1) 
 	{
@@ -92,13 +95,30 @@ int main(void){
 			previous_direction = current_direction;
 		}
 		
-		//If regen is enabled AND ADC count changed, send new regen CAN message and restart timer
-		if( regen_enabled && (old_ADC_reading != ADC_reading) )
+		if (CANMsgAvail())
 		{
+			CANReceive(&CAN_rx_msg);
+			
+			if (CAN_rx_msg.id == BATTERY_FULL_MSG)
+			{
+				regen_enabled = regen_enabled & (CAN_rx_msg.data[6] >> 1) & 0x1;
+			}
+		}
+		
+		//If regen is enabled and the ADC for regen changed and the battery is not full, regen must be enabled
+		//	Send new regen CAN message and restart timer
+		if( regen_enabled && (old_ADC_reading != ADC_reading))
+		{
+
 			
 			StopTimer();
 			
+			SendString("  NEW REGEN MSG   ");
+
+			
 			u.float_var = (float) ADC_reading / ADC_ZERO_THRESHOLD;
+			
+			SendInt(u.float_var * 100);
 			
 			CAN_regen.data[4] = u.chars[0];
 			CAN_regen.data[5] = u.chars[1];
@@ -111,8 +131,10 @@ int main(void){
 			old_encoder_reading = encoder_reading;
 			
 			RestartTimer();
+			
 		}		
-		//if encoder count changed, send new drive CAN message and restart timer
+		//Ff the encoder count changed, send new drive CAN message and restart timer unless 
+		//	
 		else if(old_encoder_reading != encoder_reading && (ADC_reading == 0 || !regen_enabled))
 		{
 			
@@ -137,14 +159,17 @@ int main(void){
 		else if(timeoutFlag == TRUE)
 		{	
 			
-			//If the driver is holding regen at a positive value, send the previous regen message
+			//If the driver is holding regen at a positive value, regen is enabled and the battery is not full
+			//	Send the previous regen message
 			if(ADC_reading > 0 && regen_enabled)
 			{	
+				
 				CANSend(&CAN_regen);
 			}
 			//If the driver is not braking, send the previous CAN drive message.
 			else
 			{	
+				
 				CANSend(&CAN_drive);
 			}
 			
@@ -156,6 +181,6 @@ int main(void){
 			RestartTimer();
 		}
 		//otherwise, nothing is to be done - nothing has changed and nothing is due
-	
+
 	}
 }
