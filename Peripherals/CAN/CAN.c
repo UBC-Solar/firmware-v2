@@ -3,10 +3,16 @@
  */
 #include "CAN.h"
 
+
+CAN_bit_timing_config_t can_configs[6] = {{2, 13, 45}, {2, 15, 20}, {2, 13, 18}, {2, 13, 9}, {2, 15, 4}, {2, 15, 2}};
+
 /**
- * Initializes the CAN controller with bit rate of [].
+ * Initializes the CAN controller with specified bit rate.
+ *
+ * @params: bitrate - Specified bitrate. If this value is not one of the defined constants, bit rate will be defaulted to 125KBS
+ *
  */
- void CANInit(void)
+ void CANInit(enum BITRATE bitrate)
  {
 	RCC->APB1ENR |= 0x2000000UL;  // Enable CAN clock 
 	RCC->APB2ENR |= 0x1UL;				 // Enable AFIO clock
@@ -22,9 +28,11 @@
 	 
 	// Set bit rates 
 	CAN1->BTR &= ~(((0x03) << 24) | ((0x07) << 20) | ((0x0F) << 16) | (0x1FF)); 
-	CAN1->BTR |=  (((2-1) & 0x07) << 20) | (((15-1) & 0x0F) << 16) | ((2-1) & 0x1FF);
+	CAN1->BTR |=  (((can_configs[bitrate].TS2-1) & 0x07) << 20) | (((can_configs[bitrate].TS1-1) & 0x0F) << 16) | ((can_configs[bitrate].BRP-1) & 0x1FF);
+ 
 
-	// Configure Filters
+	// Configure Filters to default values
+	CAN1->FM1R |= 0x1C << 8;              // Assign all filters to CAN1
 	CAN1->FMR  |=   0x1UL;                // Set to filter initialization mode
 	CAN1->FA1R &= ~(0x1UL);               // Deactivate filter 0
 	CAN1->FS1R |=   0x1UL;                // Set first filter to single 32 bit configuration
@@ -40,7 +48,71 @@
 	CAN1->MCR   &= ~(0x1UL);              // Set CAN to normal mode 
 	while (CAN1->MSR & 0x1UL); 
  
- }
+}
+
+/**
+ * Function add id to a set of ids to be allowed (filtered in) by the CAN controller
+ * 
+ * @params id - id to be added
+ *  
+ */ 
+void CANSetFilter(uint16_t id)
+{
+	static uint32_t filterID = 0;
+
+	// Out of filter banks	 
+	if (filterID == 112)
+	{
+		return;
+	}
+	 
+	CAN1->FMR  |=   0x1UL;                // Set to filter initialization mode
+	 
+	switch(filterID%4)
+	{
+		case 0:
+			// if we need another filter bank, initialize it
+			CAN1->FA1R |= 0x1UL <<(filterID/4);
+			CAN1->FM1R |= 0x1UL << (filterID/4);
+		    CAN1->FS1R &= ~(0x1UL << (filterID/4)); 
+
+			// Set both registers to filtered ID
+			CAN1->sFilterRegister[filterID/4].FR1 = (id << 5) | (id << 21);
+		    CAN1->sFilterRegister[filterID/4].FR2 = (id << 5) | (id << 21);
+			break;
+		case 1:
+			// if we already have a filter bank, set the upper 16 bits to new id
+			CAN1->sFilterRegister[filterID/4].FR1 &= 0x0000FFFF;
+			CAN1->sFilterRegister[filterID/4].FR1 |= id << 21;
+			break;
+		case 2:
+			// set the second register to new id (both upper and lower 16 bits)
+			CAN1->sFilterRegister[filterID/4].FR2 = (id << 5) | (id << 21);
+		    break;
+		case 3:
+			// set the second register's upper 16 bits to new id
+			CAN1->sFilterRegister[filterID/4].FR2 &= 0x0000FFFF;
+			CAN1->sFilterRegister[filterID/4].FR2 |= id << 21;
+			break;
+	}
+	filterID++;
+	CAN1->FMR   &= ~(0x1UL);			  // Deactivate initialization mode
+}
+
+/**
+ * Function adds a set of ids to the set of ids to be allowed (filtered in)
+ * 
+ * @params ids - array of ids to be filtered
+ * @params num - number of ids to be filtered
+ * 
+ */
+void CANSetFilters(uint16_t* ids, uint8_t num)
+{
+	for (int i = 0; i < num; i++)
+	{
+		CANSetFilter(ids[i]);
+	}
+}
  
 /**
  * Decodes CAN messages from the data registers and populates a 

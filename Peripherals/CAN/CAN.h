@@ -23,6 +23,8 @@
 #ifndef CAN_H
 #define CAN_H
 
+enum BITRATE{CAN_50KBPS, CAN_100KBPS, CAN_125KBPS, CAN_250KBPS, CAN_500KBPS, CAN_1000KBPS};
+
 typedef struct
 {
 	uint16_t id;
@@ -30,10 +32,22 @@ typedef struct
 	uint8_t  len;
 } CAN_msg_t;
 
+typedef const struct
+{
+	uint8_t TS2;
+	uint8_t TS1;
+	uint8_t BRP;
+} CAN_bit_timing_config_t;
+
+extern CAN_bit_timing_config_t can_configs[6];
+
 /**
- * Initializes the CAN controller with bit rate of [].
+ * Initializes the CAN controller with specified bit rate.
+ *
+ * @params: bitrate - Specified bitrate. If this value is not one of the defined constants, bit rate will be defaulted to 125KBS
+ *
  */
- void CANInit(void);
+ void CANInit(enum BITRATE bitrate);
  
 /**
  * Decodes CAN messages from the data registers and populates a 
@@ -61,6 +75,25 @@ typedef struct
  *
  */
  uint8_t CANMsgAvail(void);
+
+/**
+ * Function adds a set of ids to the set of ids to be allowed (filtered in)
+ * 
+ * @params ids - array of ids to be filtered
+ * @params num - number of ids to be filtered
+ * 
+ */
+void CANSetFilters(uint16_t* ids, uint8_t num);
+
+/**
+ * Decodes CAN messages from the data registers and populates a 
+ * CAN message struct with the data fields.
+ * 
+ * @preconditions A valid CAN message is received
+ * @params CAN_rx_msg - CAN message struct that will be populated
+ * 
+ */
+ void CANReceive(CAN_msg_t* CAN_rx_msg);
  
  extern CAN_msg_t CAN_rx_msg;  // Holds receiving CAN messages
  extern CAN_msg_t CAN_tx_msg;  // Holds transmitted CAN messagess
