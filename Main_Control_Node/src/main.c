@@ -3,14 +3,16 @@
 #include "LCD/LCD.h"
 #include "CAN.h"
 #include "XBee/XBee.h"
-#include "virtual_com.h"
+//#include "virtual_com.h"
 
 #define TRUE 1
 #define FALSE 0
 
-#define MC_BASE 0x200
+#define MC_BASE 0x500
 #define BATT_BASE 0x620
 #define ARR_BASE 0x700
+
+#define FILTER_LEN 9
 
 CAN_msg_t CAN_rx_msg;
 
@@ -31,7 +33,6 @@ void InitLEDs(void)
 	GPIOA->CRL |= 0x33330030UL;			//Set pins A1, A4, A5, A6, A7 to be Push-Pull Output, 50Mhz
 	GPIOA->CRH |= 0x00003333UL;			//SetBar pins A8, A9, A10 to be Push-Pull Output, 50Mhz
 	GPIOA->BRR = 0xFFFF;
-	
 }
 
 /**
@@ -42,15 +43,24 @@ int main(void)
 	
 	int32_t tempInt32;
 	CAN_msg_t newCanMsg;
+	uint16_t acceptMessages[FILTER_LEN] = {BATT_BASE + 2, BATT_BASE + 3, BATT_BASE + 4, BATT_BASE + 6, BATT_BASE + 7, MC_BASE + 2, MC_BASE + 3, MC_BASE + 0xB, ARR_BASE};
 	uint8_t c = 0;
 	uint8_t d = 0;
-	
+
+	RCC->APB2ENR |= 0x1 << 2;
+	GPIOA->CRL = ~(0xF << 20);
+	GPIOA->CRL = 0x3 << 20;
+	GPIOA->BRR = 0x1 << 5;
+		
 	InitialiseLCDPins();
-	CANInit();
 	ScreenSetup();
+	CANInit(CAN_500KBPS);
+	CANSetFilters(acceptMessages, FILTER_LEN);
 	InitLEDs();
-	VirtualComInit();
+	//VirtualComInit();
 	XBeeInit();
+		
+	GPIOA->BSRR = 0x1 << 5;
 	
 	while(1)
 	{
@@ -58,7 +68,10 @@ int main(void)
 		if (CANMsgAvail())
 		{
 			
+			GPIOA->BRR = 0x1 << 5;
 			CANReceive(&CAN_rx_msg);		//Receive the msg currently in buffer
+			GPIOA->BSRR = 0x1 << 5;
+			
 			//Check the CAN ID against several known IDs
 			//Several need to be parsed, especially the ones designated for LCD and dashboard
 			
@@ -104,7 +117,7 @@ int main(void)
 					u.chars[2] = CAN_rx_msg.data[6];
 					u.chars[3] = CAN_rx_msg.data[7];
 				
-					u.float_var = u.float_var * 3.6;
+					u.float_var = u.float_var * -3.6;
 					tempInt32 = (int32_t) u.float_var;
 				
 					if (u.float_var < 0)
@@ -125,7 +138,8 @@ int main(void)
 					break;
 				
 				//Motor Drive Unit: Temperature (For LCD Display). Values are IEEE 32-bit floating point in Celsius (C). Period: 1s
-				case MC_BASE + 0x11:
+				case MC_BASE + 0xB:
+					
 					
 					u.chars[0] = CAN_rx_msg.data[0];
 					u.chars[1] = CAN_rx_msg.data[1];
@@ -171,17 +185,18 @@ int main(void)
 					break;
 					
 					//Array: Maximum Temperature (For LCD Display). Values are 16-bit unsigned integer in Celsius(C). Period: 1s
-				case ARR_BASE:
-					//TODO: Waiting for array team to build their interface
+				case ARR_BASE + 2:
+				
+					tempInt32 = CAN_rx_msg.data[6] << 8 | CAN_rx_msg.data[7];
 					
-					UpdateScreenParameter(ARRAY_MAXTEMP_XPOS, ARRAY_MAXTEMP_YPOS, 0, 0);
+					UpdateScreenParameter(ARRAY_MAXTEMP_XPOS, ARRAY_MAXTEMP_YPOS, tempInt32, (uint32_t) (tempInt32 / 10) % 10);
 				
 					XBeeTransmitCan(&CAN_rx_msg);
 				
 					break;
 				
 				//Battery: Faults, Battery High and Battery Low (For Dashboard Indicator)
-				case 0x622:
+				case BATT_BASE + 2:
 					
 					//A10: Check if the high voltage bit is set, meaning battery is full
 					if ( (CAN_rx_msg.data[6] >> 1) & 0x1)

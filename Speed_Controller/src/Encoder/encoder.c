@@ -1,4 +1,5 @@
 #include "encoder.h"
+#include "virtual_com.h"
 
 /**
  * Initializes the encoder for the accelerator pedal
@@ -43,6 +44,9 @@ void EncoderInit (void) {
 uint16_t EncoderRead (void) {
 	
 	uint16_t Encoder_Reading = TIM1->CNT;
+	
+	//SendString("    Raw Encoder Reading:");
+	//SendInt(Encoder_Reading);
 	
 	if (Encoder_Reading > PEDAL_MAX)
 	{

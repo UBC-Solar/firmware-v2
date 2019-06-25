@@ -5,8 +5,9 @@
 #include "CAN.h"
 #include "virtual_com.h"
 #include "Timer/Timer.h"
+#include "virtual_com.h"
 
-#define DRIVE_CONTROL_ID 0x500
+#define DRIVE_CONTROL_ID 0x400
 #define BATTERY_FULL_MSG 0x622
 
 union {
@@ -20,7 +21,9 @@ union {
 } v;
 
 int main(void){
-	CANInit();
+	CANInit(CAN_500KBPS);
+	CANSetFilter(0);
+	//CANSetFilter(BATTERY_FULL_MSG);
 	EncoderInit();
 	ADCInit();
 	TimerInit(100);
@@ -59,11 +62,21 @@ int main(void){
 	CAN_regen.data[5] = 0;
 	CAN_regen.data[6] = 0;
 	CAN_regen.data[7] = 0;
+	
 		
 	RCC->APB2ENR |= 0x1 << 4;
-	GPIOC->CRH &=0;
+	GPIOC->CRH &= ~(0xF);
+	GPIOC->CRL &= ~(0xF << 24);
 	GPIOC->CRH |= 0x4;
 	GPIOC->CRL |= 0x4 << 24;
+	
+	
+	RCC->APB2ENR |= 0x1 << 2;
+	GPIOA->CRL &= ~(0xFF << 20);
+	GPIOA->CRL |= 0x33 << 20;
+	
+	GPIOA->BRR = 0x1 << 5;
+	GPIOA->BRR = 0x1 << 6;
 	
 	volatile uint16_t encoder_reading;
 	volatile uint16_t ADC_reading;
@@ -71,17 +84,50 @@ int main(void){
 	uint16_t old_encoder_reading = 0x000;
 	uint8_t regen_enabled;
 	uint8_t current_direction;
-	uint8_t previous_direction = 0;
+	uint8_t previous_direction = 1;		//assume the vehicle always starts as moving forward
+	uint16_t encoderZeroCount = 0;
 	CAN_msg_t CAN_rx_msg;
 	
 	while(1) 
 	{
 		
-		encoder_reading = EncoderRead();
-		ADC_reading = ReadADC();
+		encoder_reading = EncoderRead();// / 10;
+		//encoder_reading = encoder_reading * 10;
+		
+		ADC_reading = ReadADC() / 50;
+		ADC_reading = ADC_reading * 50;
 		
 		regen_enabled = (GPIOC->IDR >> 8) & 0x1UL;
 		current_direction = (GPIOC->IDR >> 6) & 0x1UL;
+		
+		SendString("    REGEN: ");
+		SendInt(ADC_reading);
+		SendString("    CURRENT: ");
+		SendInt(encoder_reading);
+		//SendLine();
+		/*
+		SendString("    REGEN ENABLED: ");
+		SendInt(regen_enabled);
+		SendString("    CURRENT DIRECTION: ");
+		SendInt(current_direction);
+		*/
+		
+		if (encoder_reading == 0)
+		{
+			encoderZeroCount++;
+			
+			if(encoderZeroCount > 10000)
+			{
+				GPIOA->BSRR = 0x1 << 6;
+				encoderZeroCount = 0;
+			}
+		}
+		else
+		{
+			encoderZeroCount = 0;
+			GPIOA->BRR = 0x1 << 6;
+		}
+		
 		
 		if (current_direction != previous_direction)
 		{
@@ -109,26 +155,28 @@ int main(void){
 		//	Send new regen CAN message and restart timer
 		if( regen_enabled && (old_ADC_reading != ADC_reading))
 		{
-
-			
+		
 			StopTimer();
 			
-			SendString("  NEW REGEN MSG   ");
+			SendString("NRG");
 
+			u.float_var = (float)((float) ADC_reading / ADC_ZERO_THRESHOLD);
 			
-			u.float_var = (float) ADC_reading / ADC_ZERO_THRESHOLD;
-			
-			SendInt(u.float_var * 100);
+			//SendInt(u.float_var * 100);
 			
 			CAN_regen.data[4] = u.chars[0];
 			CAN_regen.data[5] = u.chars[1];
 			CAN_regen.data[6] = u.chars[2];
 			CAN_regen.data[7] = u.chars[3];
 			
+			GPIOA->BSRR = 0x1 << 5;
 			CANSend(&CAN_regen);
+			GPIOA->BRR = 0x1 << 5;
 			
 			old_ADC_reading = ADC_reading;
 			old_encoder_reading = encoder_reading;
+			
+			//SendLine();
 			
 			RestartTimer();
 			
@@ -140,6 +188,8 @@ int main(void){
 			
 			StopTimer();
 			
+			SendString("N DRV");
+			
 			u.float_var = (float)( (float) encoder_reading/PEDAL_MAX);
 			
 			CAN_drive.data[4] = u.chars[0];
@@ -147,7 +197,9 @@ int main(void){
 			CAN_drive.data[6] = u.chars[2];
 			CAN_drive.data[7] = u.chars[3];
 			
+			GPIOA->BSRR = 0x1 << 5;
 			CANSend(&CAN_drive);
+			GPIOA->BRR = 0x1 << 5;
 			
 			old_ADC_reading = ADC_reading;
 			old_encoder_reading = encoder_reading;
@@ -163,14 +215,19 @@ int main(void){
 			//	Send the previous regen message
 			if(ADC_reading > 0 && regen_enabled)
 			{	
-				
+				SendString("O RGN");
+				GPIOA->BSRR = 0x1 << 5;
 				CANSend(&CAN_regen);
+				GPIOA->BRR = 0x1 << 5;
+				//SendLine();
 			}
 			//If the driver is not braking, send the previous CAN drive message.
 			else
 			{	
-				
-				CANSend(&CAN_drive);
+				SendString("O DRV");
+				GPIOA->BSRR = 0x1 << 5;
+				CANSend (&CAN_drive);
+				GPIOA->BRR = 0x1 << 5;
 			}
 			
 			timeoutFlag = FALSE;
@@ -181,6 +238,8 @@ int main(void){
 			RestartTimer();
 		}
 		//otherwise, nothing is to be done - nothing has changed and nothing is due
-
+		
+		SendLine();
+		
 	}
 }
