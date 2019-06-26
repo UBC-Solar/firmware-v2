@@ -3,7 +3,7 @@
 #ifndef ENCODER_MODULE
 #define ENCODER_MODULE
 
-#define PEDAL_MAX 0xEE
+#define PEDAL_MAX 0xD0
 
 /**
  * Initializes the encoder for the accelerator pedal

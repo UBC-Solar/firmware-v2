@@ -21,12 +21,14 @@ union {
 } v;
 
 int main(void){
+	
+	
 	CANInit(CAN_500KBPS);
 	CANSetFilter(0);
 	//CANSetFilter(BATTERY_FULL_MSG);
 	EncoderInit();
 	ADCInit();
-	TimerInit(100);
+	TimerInit(25);
 	VirtualComInit();
 
 	CAN_msg_t CAN_drive;   
@@ -94,17 +96,18 @@ int main(void){
 		encoder_reading = EncoderRead();// / 10;
 		//encoder_reading = encoder_reading * 10;
 		
-		ADC_reading = ReadADC() / 50;
-		ADC_reading = ADC_reading * 50;
+		ADC_reading = ReadADC(); /// 50;
+		//ADC_reading = ADC_reading * 50;
 		
 		regen_enabled = (GPIOC->IDR >> 8) & 0x1UL;
 		current_direction = (GPIOC->IDR >> 6) & 0x1UL;
 		
-		SendString("    REGEN: ");
-		SendInt(ADC_reading);
-		SendString("    CURRENT: ");
-		SendInt(encoder_reading);
-		//SendLine();
+		
+		//SendString("    REGEN: ");
+		//SendInt(ADC_reading);
+		//SendString("    CURRENT: ");
+		//SendInt(TIM1->CNT);
+		//     SendLine();
 		/*
 		SendString("    REGEN ENABLED: ");
 		SendInt(regen_enabled);
@@ -157,12 +160,13 @@ int main(void){
 		{
 		
 			StopTimer();
-			
-			SendString("NRG");
+			GPIOA->BRR = 0x1 << 6;
+			//SendString("NRG");
 
 			u.float_var = (float)((float) ADC_reading / ADC_ZERO_THRESHOLD);
 			
-			//SendInt(u.float_var * 100);
+			SendInt(ADC_reading);
+			SendLine();
 			
 			CAN_regen.data[4] = u.chars[0];
 			CAN_regen.data[5] = u.chars[1];
@@ -173,8 +177,8 @@ int main(void){
 			CANSend(&CAN_regen);
 			GPIOA->BRR = 0x1 << 5;
 			
-			old_ADC_reading = ADC_reading;
-			old_encoder_reading = encoder_reading;
+			//old_ADC_reading = ADC_reading;
+			//old_encoder_reading = encoder_reading;
 			
 			//SendLine();
 			
@@ -187,11 +191,14 @@ int main(void){
 		{
 			
 			StopTimer();
+			GPIOA->BRR = 0x1 << 6;
+			//SendString("N DRV");
 			
-			SendString("N DRV");
+			u.float_var = (float)(2*((float) encoder_reading/PEDAL_MAX) - ((float) encoder_reading/PEDAL_MAX)*((float) encoder_reading/PEDAL_MAX));
 			
-			u.float_var = (float)( (float) encoder_reading/PEDAL_MAX);
-			
+			//SendInt(u.float_var*100);
+			//SendLine();
+			//u.float_var = 0.2;
 			CAN_drive.data[4] = u.chars[0];
 			CAN_drive.data[5] = u.chars[1];
 			CAN_drive.data[6] = u.chars[2];
@@ -201,8 +208,8 @@ int main(void){
 			CANSend(&CAN_drive);
 			GPIOA->BRR = 0x1 << 5;
 			
-			old_ADC_reading = ADC_reading;
-			old_encoder_reading = encoder_reading;
+			//old_ADC_reading = ADC_reading;
+			//old_encoder_reading = encoder_reading;
 		
 			RestartTimer();
 		
@@ -213,9 +220,13 @@ int main(void){
 			
 			//If the driver is holding regen at a positive value, regen is enabled and the battery is not full
 			//	Send the previous regen message
-			if(ADC_reading > 0 && regen_enabled)
+			if(ADC_reading > 10 && regen_enabled)
 			{	
-				SendString("O RGN");
+			//	SendString("O RGN");
+				//SendString("   ");
+				//SendInt(ADC_reading);
+				//SendLine();
+				GPIOA->BSRR = 0x1 << 6;
 				GPIOA->BSRR = 0x1 << 5;
 				CANSend(&CAN_regen);
 				GPIOA->BRR = 0x1 << 5;
@@ -224,7 +235,8 @@ int main(void){
 			//If the driver is not braking, send the previous CAN drive message.
 			else
 			{	
-				SendString("O DRV");
+				//SendString("O DRV");
+				GPIOA->BRR = 0x1 << 6;
 				GPIOA->BSRR = 0x1 << 5;
 				CANSend (&CAN_drive);
 				GPIOA->BRR = 0x1 << 5;
@@ -232,14 +244,33 @@ int main(void){
 			
 			timeoutFlag = FALSE;
 			
-			old_ADC_reading = ADC_reading;
-			old_encoder_reading = encoder_reading;
+			//old_ADC_reading = ADC_reading;
+			//old_encoder_reading = encoder_reading;
 			
 			RestartTimer();
 		}
+		
+			old_ADC_reading = ADC_reading;
+			old_encoder_reading = encoder_reading;		
+		
 		//otherwise, nothing is to be done - nothing has changed and nothing is due
 		
-		SendLine();
+		//SendLine();
 		
+			/*
+			u.float_var = 0.2;
+			CAN_drive.data[4] = u.chars[0];
+			CAN_drive.data[5] = u.chars[1];
+			CAN_drive.data[6] = u.chars[2];
+			CAN_drive.data[7] = u.chars[3];
+			
+			GPIOA->BSRR = 0x1 << 5;
+			CANSend(&CAN_drive);
+			GPIOA->BRR = 0x1 << 5;
+			
+			for (volatile int j = 0; j < 10000; j++)
+			{}
+			*/
 	}
+	
 }

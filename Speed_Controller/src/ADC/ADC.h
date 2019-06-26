@@ -3,7 +3,7 @@
 #ifndef ADC_MODULE
 #define ADC_MODULE
 
-#define ADC_ZERO_THRESHOLD 0x600
+#define ADC_ZERO_THRESHOLD 0x300
 
 /** 
  * Initializes an ADC for the regenerative braking toggle

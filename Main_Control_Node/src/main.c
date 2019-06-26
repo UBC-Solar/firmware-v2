@@ -3,7 +3,7 @@
 #include "LCD/LCD.h"
 #include "CAN.h"
 #include "XBee/XBee.h"
-//#include "virtual_com.h"
+#include "virtual_com.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -55,9 +55,9 @@ int main(void)
 	InitialiseLCDPins();
 	ScreenSetup();
 	CANInit(CAN_500KBPS);
-	CANSetFilters(acceptMessages, FILTER_LEN);
+	//CANSetFilters(acceptMessages, FILTER_LEN);
 	InitLEDs();
-	//VirtualComInit();
+	VirtualComInit();
 	XBeeInit();
 		
 	GPIOA->BSRR = 0x1 << 5;
@@ -74,7 +74,8 @@ int main(void)
 			
 			//Check the CAN ID against several known IDs
 			//Several need to be parsed, especially the ones designated for LCD and dashboard
-			
+			SendInt(CAN_rx_msg.id);
+			SendLine();
 			switch(CAN_rx_msg.id)
 			{
 				
