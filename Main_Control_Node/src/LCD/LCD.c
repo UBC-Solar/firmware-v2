@@ -301,6 +301,8 @@ void DisplayScreen(void)
 {
 	//Clears the screen
     ClearScreen();
+	
+	//COLUMN 1
 
 	//Battery Pack Current(BMS)
 	OutputString("-000.0", BATTERY_CURRENT_XPOS, BATTERY_CURRENT_YPOS);
@@ -314,24 +316,44 @@ void DisplayScreen(void)
 	OutputString("-000.0", MOTOR_CURRENT_XPOS, MOTOR_CURRENT_YPOS);
 	OutputString("A", MOTOR_CURRENT_UNIT_XPOS, MOTOR_CURRENT_UNIT_YPOS);
 	
+	//MDU Temperature(Motor Controller)
+	OutputString("-000.0", MOTOR_TEMP_XPOS, MOTOR_TEMP_YPOS);
+	OutputString("C", MOTOR_TEMP_UNIT_XPOS, MOTOR_TEMP_UNIT_YPOS);
+	
 	//Vehicle Speed(Motor Controller)
 	OutputString("-000.0", MOTOR_SPEED_XPOS, MOTOR_SPEED_YPOS);
-	OutputString("KMH", MOTOR_SPEED_UNIT_XPOS, MOTOR_SPEED_UNIT_YPOS);
+	OutputString("KH", MOTOR_SPEED_UNIT_XPOS, MOTOR_SPEED_UNIT_YPOS);
+	
+	//COLUMN 2
+	
+	//Minimum cell voltage in the Battery(BMS)
+	OutputString("-000.0", BATTERY_MINVOLT_XPOS, BATTERY_MINVOLT_YPOS);
+	OutputString("V", BATTERY_MINVOLT_UNIT_XPOS, BATTERY_MINVOLT_UNIT_YPOS);
+	
+	//Maximum cell voltage in the Battery(BMS)
+	OutputString("-000.0", BATTERY_MAXVOLT_XPOS, BATTERY_MAXVOLT_YPOS);
+	OutputString("V", BATTERY_MAXVOLT_UNIT_XPOS, BATTERY_MAXVOLT_UNIT_YPOS);
+	
+	//Supplemental Battery Voltage(BMS)
+	OutputString("-000.0", BATTERY_SUPPVOLT_XPOS, BATTERY_SUPPVOLT_YPOS);
+	OutputString("V", BATTERY_SUPPVOLT_UNIT_XPOS, BATTERY_SUPPVOLT_UNIT_YPOS);
 	
 	//Maximum Temperature in the Battery(BMS)
 	OutputString("-000.0", BATTERY_MAXTEMP_XPOS, BATTERY_MAXTEMP_YPOS);
 	OutputString("C", BATTERY_MAXTEMP_UNIT_XPOS, BATTERY_MAXTEMP_UNIT_YPOS);
-	
-	//Maximum Temperature in the Array(Array)
-	OutputString("-000.0", ARRAY_MAXTEMP_XPOS, ARRAY_MAXTEMP_YPOS);
-	OutputString("C", ARRAY_MAXTEMP_UNIT_XPOS, ARRAY_MAXTEMP_UNIT_YPOS);
-	
-	//MDU Temperature(Motor Controller)
-	OutputString("-000.0", MOTOR_TEMP_XPOS, MOTOR_TEMP_YPOS);
-	OutputString("C", MOTOR_TEMP_UNIT_XPOS, MOTOR_TEMP_UNIT_YPOS);
 
+	//State of charge percentage
+	OutputString("-000.0", BATTERY_CHARGE_XPOS, BATTERY_CHARGE_YPOS);
+
+	//DEPRECATED
+	//Maximum Temperature in the Array(Array)
+	//OutputString("-000.0", ARRAY_MAXTEMP_XPOS, ARRAY_MAXTEMP_YPOS);
+	//OutputString("C", ARRAY_MAXTEMP_UNIT_XPOS, ARRAY_MAXTEMP_UNIT_YPOS);
+	
+	//DEPRECATED
 	//State of Charge Bar in percentage (BMS)
-	SetBar(100, 100, CHARGE_BAR_YPOS);
+	//SetBar(100, 100, CHARGE_BAR_YPOS);
+	
 }
 
 /**

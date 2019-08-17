@@ -80,9 +80,15 @@ int main(void)
 			{
 				
 				//Battery: Pack Voltage(For LCD Display). Values are unsigned 16-bit integers in Volts (V). Period: 1s
+				//Battery: Minimum Cell Voltage (For LCD Display). Values are unsigned 8-bit integers in 100mv intervals. Period: 1s
+				//Battery: Maximum Cell Voltage (For LCD Display). Values are unsigned 8-bit integers in 100mv intervals. Period: 1s
 				case BATT_BASE + 3:
 					UpdateScreenParameter(BATTERY_VOLTAGE_XPOS, BATTERY_VOLTAGE_YPOS, (uint16_t) (CAN_rx_msg.data[1] | CAN_rx_msg.data[0] << 8), 0);
-									
+					
+					UpdateScreenParameter(BATTERY_MINVOLT_XPOS, BATTERY_MINVOLT_YPOS, (uint8_t) CAN_rx_msg.data[2] / 10, (uint8_t) CAN_rx_msg.data[2] % 10);
+					
+					UpdateScreenParameter(BATTERY_MAXVOLT_XPOS, BATTERY_MAXVOLT_YPOS, (uint8_t) CAN_rx_msg.data[4] / 10, (uint8_t) CAN_rx_msg.data[4] % 10);
+					
 					XBeeTransmitCan(&CAN_rx_msg);								
 					break;
 				
@@ -104,10 +110,19 @@ int main(void)
 				//Battery: State of Charge (For LCD Display). Values are unsigned 8-bit integers. Period: 1s
 				case BATT_BASE + 6:
 					
+					UpdateScreenParameter(BATTERY_CHARGE_XPOS, BATTERY_CHARGE_YPOS, (int8_t) CAN_rx_msg.data[0], 0); 
+					
 					//This one is different; it is used to set a battery percentage bar
-					SetBar(0xFF & CAN_rx_msg.data[0], 100, CHARGE_BAR_YPOS);
+					//SetBar(0xFF & CAN_rx_msg.data[0], 100, CHARGE_BAR_YPOS);
 				
 					XBeeTransmitCan(&CAN_rx_msg);	
+					break;
+				
+				//NOT FULLY IMPLEMENTED
+				case BATT_BASE + 30:
+					
+					UpdateScreenParameter(BATTERY_SUPPVOLT_XPOS, BATTERY_SUPPVOLT_YPOS, 0, 0);
+					
 					break;
 				
 				//Motor Drive Unit: Speed (For LCD Display). Values are IEEE 32-bit floating point in m/s. Period: 200ms
@@ -184,17 +199,18 @@ int main(void)
 					
 					UpdateScreenParameter(MOTOR_CURRENT_XPOS, MOTOR_CURRENT_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10 );
 					break;
-					
-					//Array: Maximum Temperature (For LCD Display). Values are 16-bit unsigned integer in Celsius(C). Period: 1s
-				case ARR_BASE + 2:
 				
-					tempInt32 = CAN_rx_msg.data[6] << 8 | CAN_rx_msg.data[7];
-					
-					UpdateScreenParameter(ARRAY_MAXTEMP_XPOS, ARRAY_MAXTEMP_YPOS, tempInt32, (uint32_t) (tempInt32 / 10) % 10);
-				
-					XBeeTransmitCan(&CAN_rx_msg);
-				
-					break;
+				//DEPRECATED
+				//Array: Maximum Temperature (For LCD Display). Values are 16-bit unsigned integer in Celsius(C). Period: 1s
+				//case ARR_BASE + 2:
+				//
+				//	tempInt32 = CAN_rx_msg.data[6] << 8 | CAN_rx_msg.data[7];
+				//
+				//	UpdateScreenParameter(ARRAY_MAXTEMP_XPOS, ARRAY_MAXTEMP_YPOS, tempInt32, (uint32_t) (tempInt32 / 10) % 10);
+				//
+				//	XBeeTransmitCan(&CAN_rx_msg);
+				//
+				//	break;
 				
 				//Battery: Faults, Battery High and Battery Low (For Dashboard Indicator)
 				case BATT_BASE + 2:

@@ -7,7 +7,7 @@
 #include "Timer/Timer.h"
 #include "virtual_com.h"
 
-#define DRIVE_CONTROL_ID 0x400
+#define DRIVE_CONTROL_ID 0x500
 #define BATTERY_FULL_MSG 0x622
 
 union {
