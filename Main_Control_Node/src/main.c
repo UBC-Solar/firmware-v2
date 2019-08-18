@@ -215,22 +215,6 @@ int main(void)
 				//Battery: Faults, Battery High and Battery Low (For Dashboard Indicator)
 				case BATT_BASE + 2:
 					
-					//Turn on LEDs if the appropriate battery fault exists.
-					
-					//Battery Low:	A0
-					//Battery Full: A1				
-					//Battery Communications Fault: A4				
-					//Battery charge over-current: A6
-					//Battery discharge over-current: A7
-					//Battery over-temperature: A8
-					//Battery under-voltage: A9
-					//Battery over-voltage: A10
-						
-					GPIOA->BSRR = (CAN_rx_msg.data[6] & 0x3) || \
-									( ( (CAN_rx_msg.data[5] >> 2) & 0x1) << 4 ) || \
-									( ( (CAN_rx_msg.data[5] >> 4) & 0x1F) << 6);
-					
-					/*
 					//A10: Check if the high voltage bit is set, meaning battery is full
 					if ( (CAN_rx_msg.data[6] >> 1) & 0x1)
 					{
@@ -286,7 +270,6 @@ int main(void)
 						//Reset pin A11: turn on LED
 						GPIOA->BSRR = 0x1 << 11;
 					}
-					*/
 					
 					XBeeTransmitCan(&newCanMsg);
 									
