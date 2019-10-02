@@ -45,12 +45,16 @@ int main(void)
 	uint8_t c = 0;
 	uint8_t d = 0;
 	
+	osKernelInitialize();
+	
 	InitialiseLCDPins();
 	CANInit();
 	ScreenSetup();
 	InitLEDs();
 	VirtualComInit();
 	XBeeInit();
+	
+	osKernelStart();
 	
 	while(1)
 	{
@@ -69,7 +73,7 @@ int main(void)
 				case BATT_BASE + 3:
 					UpdateScreenParameter(BATTERY_VOLTAGE_XPOS, BATTERY_VOLTAGE_YPOS, (uint16_t) (CAN_rx_msg.data[1] | CAN_rx_msg.data[0] << 8), 0);
 									
-					XBeeTransmitCan(&CAN_rx_msg);								
+					XBeeQueueCan(&CAN_rx_msg);								
 					break;
 				
 				//Battery: Pack Current(For LCD Display). Values are signed 16-bit integers in Amperes (A). Period: 1s
@@ -77,14 +81,14 @@ int main(void)
 					
 					UpdateScreenParameter(BATTERY_CURRENT_XPOS, BATTERY_CURRENT_YPOS, (int16_t) (CAN_rx_msg.data[1] | CAN_rx_msg.data[0] << 8), 0);
 					
-					XBeeTransmitCan(&CAN_rx_msg);							
+					XBeeQueueCan(&CAN_rx_msg);							
 					break;
 				
 				//Battery: Pack Maximum Temperature (For LCD Display). Values are signed 8-bit integers in Celsius (C). Period: 1s
 				case BATT_BASE + 7:
 					UpdateScreenParameter(BATTERY_MAXTEMP_XPOS, BATTERY_MAXTEMP_YPOS, (int8_t) CAN_rx_msg.data[4], 0);
 				
-					XBeeTransmitCan(&CAN_rx_msg);	
+					XBeeQueueCan(&CAN_rx_msg);	
 					break;
 					
 				//Battery: State of Charge (For LCD Display). Values are unsigned 8-bit integers. Period: 1s
@@ -93,7 +97,7 @@ int main(void)
 					//This one is different; it is used to set a battery percentage bar
 					SetBar(0xFF & CAN_rx_msg.data[0], 100, CHARGE_BAR_YPOS);
 				
-					XBeeTransmitCan(&CAN_rx_msg);	
+					XBeeQueueCan(&CAN_rx_msg);	
 					break;
 				
 				//Motor Drive Unit: Speed (For LCD Display). Values are IEEE 32-bit floating point in m/s. Period: 200ms
@@ -117,7 +121,7 @@ int main(void)
 					//send the CAN message once every second
 					if (d == 5)
 					{
-						XBeeTransmitCan(&CAN_rx_msg);
+						XBeeQueueCan(&CAN_rx_msg);
 						d = 0;
 					}
 					d++;
@@ -139,7 +143,7 @@ int main(void)
 						u.float_var = u.float_var * -1;
 					}
 					
-					XBeeTransmitCan(&CAN_rx_msg);
+					XBeeQueueCan(&CAN_rx_msg);
 					
 					UpdateScreenParameter(MOTOR_TEMP_XPOS, MOTOR_TEMP_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10 );
 					break;
@@ -162,7 +166,7 @@ int main(void)
 					//Send the CAN message once every second
 					if (c == 5)
 					{
-						XBeeTransmitCan(&CAN_rx_msg);
+						XBeeQueueCan(&CAN_rx_msg);
 						c = 0;
 					}
 					c++;
@@ -176,7 +180,7 @@ int main(void)
 					
 					UpdateScreenParameter(ARRAY_MAXTEMP_XPOS, ARRAY_MAXTEMP_YPOS, 0, 0);
 				
-					XBeeTransmitCan(&CAN_rx_msg);
+					XBeeQueueCan(&CAN_rx_msg);
 				
 					break;
 				
@@ -239,7 +243,7 @@ int main(void)
 						GPIOA->BSRR = 0x1 << 11;
 					}
 					
-					XBeeTransmitCan(&newCanMsg);
+					XBeeQueueCan(&newCanMsg);
 									
 					break;
 							

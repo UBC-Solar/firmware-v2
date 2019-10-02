@@ -1,11 +1,28 @@
+
 #include "XBee.h"
+
+#define XBEE_MAIL_BOX_MAX_SIZE 4
+#define XBEE_MAX_THREADS 1
+
+void XBeeThread(void const *argument);
+
+osMailQDef(XBeeMailBox, XBEE_MAIL_BOX_MAX_SIZE, CAN_msg_t);
+osMailQId XBeeMailBoxID; 
+
+osThreadDef(XBeeThread, osPriorityAboveNormal, XBEE_MAX_THREADS, 0);
+osThreadId XBeeThreadID;
 
 /**
  * Initializes the STM32 UART on GPIO B10 and B11 to a baudrate of 9600
  */
-void XBeeInit(void)
+osStatus XBeeInit(void)
 {
-
+	XBeeThreadID = osThreadCreate (osThread(XBeeThread), NULL);
+	if (!XBeeThreadID) return osErrorOS;
+	
+	XBeeMailBoxID = osMailCreate(osMailQ(XBeeMailBox), NULL);
+	if (!XBeeMailBoxID) return osErrorOS; 
+	
 	// Enable GPIOA clock, AFIO
 	RCC->APB2ENR |= 0x9UL;			//Enables Port B Clock and AFIO Clock
 	GPIOB->CRH &= ~(0xFF00UL);	    //B11: Floating Input
@@ -22,6 +39,31 @@ void XBeeInit(void)
 
 	// Enable USART3
 	USART3->CR1 |= 0x1 << 13;
+	
+	return osOK;
+}
+
+/** 
+ * Queues up CAN message for transmission when free 
+ * Passes: An instance of the can_msg_t data type
+ */
+osStatus XBeeQueueCan(CAN_msg_t* msg_tx)
+{
+	// allocate mail slot 
+	CAN_msg_t* msg_copy; 
+	msg_copy = (CAN_msg_t*)osMailAlloc(XBeeMailBoxID, osWaitForever);
+	if (!msg_copy) return osErrorOS;
+	
+	// copy over contents of message
+	msg_copy->id = msg_tx->id; 
+	msg_copy->len = msg_tx->len; 
+	for (int i = 0; i < 8; ++i)
+	{
+		msg_copy->data[i] = msg_tx->data[i];
+	}
+	
+	// queue up message
+	return osMailPut(XBeeMailBoxID, msg_copy);
 }
 
 /**
@@ -107,6 +149,20 @@ void XBeeSendByte(char c)
 }
 
 
-
+void XBeeThread(void const *argument)
+{
+  osEvent evt; 
+	CAN_msg_t* msg_tx;
+  while (1)
+	{
+		evt = osMailGet(XBeeMailBoxID, osWaitForever);
+		if (evt.status == osEventMail)
+		{
+			msg_tx = (CAN_msg_t*)evt.value.p;
+			XBeeTransmitCan(msg_tx);
+		}
+		osMailFree(XBeeMailBoxID, msg_tx);
+  }
+}
 
 

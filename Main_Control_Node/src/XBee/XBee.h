@@ -1,4 +1,5 @@
 #include "stm32f10x.h"
+#include "cmsis_os.h"
 #include "CAN.h"
 
 #define CAN_MSG_SIZE (uint8_t) 17;
@@ -7,7 +8,12 @@
 /**
  * Initializes the STM32 UART on GPIO B10 and B11 to a baudrate of 9600
  */
-void XBeeInit(void);
+osStatus XBeeInit(void);
+/** 
+ * Queues up CAN message for transmission when free 
+ * Passes: An instance of the can_msg_t data type
+ */
+osStatus XBeeQueueCan(CAN_msg_t* msg_tx);
 /**
  * Transmits a CAN message via the previously initialized STM32 UART
  * Passes: An instance of the can_msg_t data type
