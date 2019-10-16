@@ -44,11 +44,18 @@ void EncoderInit (void) {
 uint16_t EncoderRead (void) {
 	
 	uint16_t Encoder_Reading = TIM1->CNT;
-	
+	//TEST
 	//SendString("    Raw Encoder Reading:");
 	//SendInt(Encoder_Reading);
+	//SendLine();
+	//ENDTEST
+
 	
-	if (Encoder_Reading > PEDAL_MAX)
+	if (Encoder_Reading > PEDAL_MAX && Encoder_Reading < PEDAL_OVERLOAD)
+	{
+		Encoder_Reading = PEDAL_MAX;
+	}
+	else if (Encoder_Reading >= PEDAL_OVERLOAD)
 	{
 		Encoder_Reading = 0;
 	}

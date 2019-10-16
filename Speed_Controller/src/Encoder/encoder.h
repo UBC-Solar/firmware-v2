@@ -4,6 +4,8 @@
 #define ENCODER_MODULE
 
 #define PEDAL_MAX 0xD0
+#define PEDAL_MIN 0x0F
+#define PEDAL_OVERLOAD 0xFF
 
 /**
  * Initializes the encoder for the accelerator pedal

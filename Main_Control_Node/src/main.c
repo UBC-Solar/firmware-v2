@@ -19,6 +19,16 @@ CAN_msg_t CAN_rx_msg;
 union {
 	float float_var;
 	uint8_t chars[4];
+}vel;
+
+union {
+	float float_var;
+	uint8_t chars[4];
+}cur;
+
+union {
+	float float_var;
+	uint8_t chars[4];
 } u;
 
 /**
@@ -30,9 +40,17 @@ void InitLEDs(void)
 	RCC->APB2ENR |= 0x1UL << 2; 		//Initialize clock for GPIOA, if it hasn't been initialized yet
 	GPIOA->CRL &= 0;
 	GPIOA->CRH &= 0;
-	GPIOA->CRL |= 0x33330030UL;			//Set pins A1, A4, A5, A6, A7 to be Push-Pull Output, 50Mhz
-	GPIOA->CRH |= 0x00003333UL;			//SetBar pins A8, A9, A10 to be Push-Pull Output, 50Mhz
+	GPIOA->CRL |= 0x33330033UL;			//Set pins A1, A4, A5, A6, A7 to be Push-Pull Output, 50Mhz
+	GPIOA->CRH |= 0x30033333UL;			//SetBar pins A8, A9, A10 to be Push-Pull Output, 50Mhz
+	
+	RCC->APB2ENR |= 0x1;
+	AFIO->MAPR |= 0x2 << 24;
+	//GPIOA->BSRR = 0xFFFF;
+	
+	//GPIOA->BSRR = 0x1 << 11;
+	
 	GPIOA->BRR = 0xFFFF;
+
 }
 
 /**
@@ -47,10 +65,15 @@ int main(void)
 	uint8_t c = 0;
 	uint8_t d = 0;
 
-	RCC->APB2ENR |= 0x1 << 2;
-	GPIOA->CRL = ~(0xF << 20);
-	GPIOA->CRL = 0x3 << 20;
-	GPIOA->BRR = 0x1 << 5;
+	//RCC->APB2ENR |= 0x1 << 2;
+	//GPIOA->CRL &= ~(0xFF0F00FF);
+	//GPIOA->CRH &= ~(0x00000FFF);
+	
+	//GPIOA->CRL |= 0x33030033;
+	//GPIOA->CRH |= 0x00000333;
+	
+		
+	//GPIOA->BRR = 0x1 << 5;
 		
 	InitialiseLCDPins();
 	ScreenSetup();
@@ -58,9 +81,29 @@ int main(void)
 	//CANSetFilters(acceptMessages, FILTER_LEN);
 	InitLEDs();
 	VirtualComInit();
-	XBeeInit();
+	//XBeeInit();
 		
-	GPIOA->BSRR = 0x1 << 5;
+	//GPIOA->BSRR = 0x1 << 5;
+		
+					//Battery Low:	A0
+					//Battery Full: A1				
+					//Battery Communications Fault: A4				
+					//Battery charge over-current: A6
+					//Battery discharge over-current: A7
+					//Battery over-temperature: A8
+					//Battery under-voltage: A9
+					//Battery over-voltage: A10
+					
+					//Motor Fault: PA12
+					
+
+	//GPIOA->BSRR = 0x1;
+		
+	//GPIOA->BSRR = (CAN_rx_msg.data[6] & 0x3) || \
+	//				( ( (CAN_rx_msg.data[5] >> 2) & 0x1) << 4 ) || \
+	//				( ( (CAN_rx_msg.data[5] >> 4) & 0x1F) << 6);
+	
+	
 	
 	while(1)
 	{
@@ -70,12 +113,40 @@ int main(void)
 			
 			GPIOA->BRR = 0x1 << 5;
 			CANReceive(&CAN_rx_msg);		//Receive the msg currently in buffer
+			
+			//TEST
+			
+			if (CAN_rx_msg.id >= 0x400 && CAN_rx_msg.id < 0x500)
+			{
+				SendInt(CAN_rx_msg.id);
+				
+				vel.chars[0] = CAN_rx_msg.data[0];
+				vel.chars[1] = CAN_rx_msg.data[1];
+				vel.chars[2] = CAN_rx_msg.data[2];
+				vel.chars[3] = CAN_rx_msg.data[3];
+				
+				cur.chars[0] = CAN_rx_msg.data[4];
+				cur.chars[1] = CAN_rx_msg.data[5];
+				cur.chars[2] = CAN_rx_msg.data[6];
+				cur.chars[3] = CAN_rx_msg.data[7];
+				
+				SendString(" ");
+				SendInt( (int) (vel.float_var));
+				
+				SendString(" ");
+				SendInt( (int) (cur.float_var * 100) );
+				
+				SendLine();
+			}
+			
+			//ENDTEST
+			
 			GPIOA->BSRR = 0x1 << 5;
 			
 			//Check the CAN ID against several known IDs
 			//Several need to be parsed, especially the ones designated for LCD and dashboard
-			SendInt(CAN_rx_msg.id);
-			SendLine();
+			//SendInt(CAN_rx_msg.id);
+			//SendLine();
 			switch(CAN_rx_msg.id)
 			{
 				
@@ -89,7 +160,7 @@ int main(void)
 					
 					UpdateScreenParameter(BATTERY_MAXVOLT_XPOS, BATTERY_MAXVOLT_YPOS, (uint8_t) CAN_rx_msg.data[4] / 10, (uint8_t) CAN_rx_msg.data[4] % 10);
 					
-					XBeeTransmitCan(&CAN_rx_msg);								
+					//XBeeTransmitCan(&CAN_rx_msg);								
 					break;
 				
 				//Battery: Pack Current(For LCD Display). Values are signed 16-bit integers in Amperes (A). Period: 1s
@@ -97,14 +168,14 @@ int main(void)
 					
 					UpdateScreenParameter(BATTERY_CURRENT_XPOS, BATTERY_CURRENT_YPOS, (int16_t) (CAN_rx_msg.data[1] | CAN_rx_msg.data[0] << 8), 0);
 					
-					XBeeTransmitCan(&CAN_rx_msg);							
+					//XBeeTransmitCan(&CAN_rx_msg);							
 					break;
 				
 				//Battery: Pack Maximum Temperature (For LCD Display). Values are signed 8-bit integers in Celsius (C). Period: 1s
 				case BATT_BASE + 7:
 					UpdateScreenParameter(BATTERY_MAXTEMP_XPOS, BATTERY_MAXTEMP_YPOS, (int8_t) CAN_rx_msg.data[4], 0);
 				
-					XBeeTransmitCan(&CAN_rx_msg);	
+					//XBeeTransmitCan(&CAN_rx_msg);	
 					break;
 					
 				//Battery: State of Charge (For LCD Display). Values are unsigned 8-bit integers. Period: 1s
@@ -115,7 +186,7 @@ int main(void)
 					//This one is different; it is used to set a battery percentage bar
 					//SetBar(0xFF & CAN_rx_msg.data[0], 100, CHARGE_BAR_YPOS);
 				
-					XBeeTransmitCan(&CAN_rx_msg);	
+					//XBeeTransmitCan(&CAN_rx_msg);	
 					break;
 				
 				//NOT FULLY IMPLEMENTED
@@ -146,7 +217,7 @@ int main(void)
 					//send the CAN message once every second
 					if (d == 5)
 					{
-						XBeeTransmitCan(&CAN_rx_msg);
+						//XBeeTransmitCan(&CAN_rx_msg);
 						d = 0;
 					}
 					d++;
@@ -169,7 +240,7 @@ int main(void)
 						u.float_var = u.float_var * -1;
 					}
 					
-					XBeeTransmitCan(&CAN_rx_msg);
+					//XBeeTransmitCan(&CAN_rx_msg);
 					
 					UpdateScreenParameter(MOTOR_TEMP_XPOS, MOTOR_TEMP_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10 );
 					break;
@@ -192,7 +263,7 @@ int main(void)
 					//Send the CAN message once every second
 					if (c == 5)
 					{
-						XBeeTransmitCan(&CAN_rx_msg);
+						//XBeeTransmitCan(&CAN_rx_msg);
 						c = 0;
 					}
 					c++;
@@ -230,8 +301,8 @@ int main(void)
 									( ( (CAN_rx_msg.data[5] >> 2) & 0x1) << 4 ) || \
 									( ( (CAN_rx_msg.data[5] >> 4) & 0x1F) << 6);
 					
-					/*
 					
+					/*
 					//A10: Check if the high voltage bit is set, meaning battery is full
 					if ( (CAN_rx_msg.data[6] >> 1) & 0x1)
 					{
@@ -288,14 +359,16 @@ int main(void)
 						GPIOA->BSRR = 0x1 << 11;
 					}
 					
-					XBeeTransmitCan(&newCanMsg);
-					
+					//XBeeTransmitCan(&newCanMsg);
 					*/
-									
+						
 					break;
 							
 			}		
 		}
 		
 	}
+	
+	
+	
 }
