@@ -1,3 +1,4 @@
+
 /**
  * Function implementations for enabling and using CAN messaging.
  */
@@ -176,3 +177,4 @@ void CANSetFilters(uint16_t* ids, uint8_t num)
  {
 	 return CAN1->RF0R & 0x3UL;
 }
+

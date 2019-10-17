@@ -26,7 +26,6 @@ int main(void){
 	EncoderInit();
 	TimerInit(200);
 	VirtualComInit();
-
 	CAN_msg_t CAN_drive;     
 	
 	CAN_drive.len = 8;
@@ -83,8 +82,14 @@ int main(void){
 		//If the encoder count changed, send new drive CAN message and restart timer
 		if(old_encoder_reading != encoder_reading)
 		{
+
 			
-			StopTimer();
+				RestartTimer();
+			}		
+			//if encoder count changed, send new drive CAN message and restart timer
+			else if(old_encoder_reading != encoder_reading && (ADC_reading == 0 || !regen_enabled))
+			{
+				StopTimer();
 			
 			//Use a parabolic scaling
 			//u.float_var = (float)(2*((float) encoder_reading/PEDAL_MAX) - ((float) encoder_reading/PEDAL_MAX)*((float) encoder_reading/PEDAL_MAX));		
@@ -116,6 +121,7 @@ int main(void){
 		}
 		
 		old_encoder_reading = encoder_reading;		
+
 	}
 	
 }

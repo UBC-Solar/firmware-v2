@@ -1,0 +1,8 @@
+<html>
+        <text>Hello world</text>
+        <script src="./socket.io/socket.io.js"></script>
+        <script>
+            const socket = io();
+            socket.on("data", (payload)=> {document.querySelector('text').innerHTML = payload;})
+        </script>
+</html>
