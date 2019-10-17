@@ -24,7 +24,7 @@ void EncoderInit (void) {
 	TIM1->CCMR1 |= 0x01 << 8; //Map Channel 2 to TI2
 	
 	TIM1->CCER &= ~(0x1 << 1);
-	TIM1->CCER &= ~(0x1 << 3);
+	TIM1->CCER &= ~(0x1 << 3); 
 	
 	TIM1->CCER &= ~(0x1 << 5);
 	TIM1->CCER &= ~(0x1 << 7);
@@ -50,15 +50,34 @@ uint16_t EncoderRead (void) {
 	//SendLine();
 	//ENDTEST
 
-	
-	if (Encoder_Reading > PEDAL_MAX && Encoder_Reading < PEDAL_OVERLOAD)
-	{
-		Encoder_Reading = PEDAL_MAX;
-	}
-	else if (Encoder_Reading >= PEDAL_OVERLOAD)
+	if (Encoder_Reading < PEDAL_MIN)
 	{
 		Encoder_Reading = 0;
 	}
+	else if (Encoder_Reading < PEDAL_MAX)
+	{
+		Encoder_Reading = Encoder_Reading - PEDAL_MIN;
+		
+		if (Encoder_Reading > 0x40)
+		{
+			Encoder_Reading = 0x10;
+		}
+		else
+		{
+			Encoder_Reading = 0x00;
+		}
+		
+	}
+	else if (Encoder_Reading < PEDAL_OVERLOAD)
+	{
+		Encoder_Reading = 0x10;
+	}
+	else
+	{
+		Encoder_Reading = 0;
+	}
+	
+	
 	
 	return Encoder_Reading;
 	

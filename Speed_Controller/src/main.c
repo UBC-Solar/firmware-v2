@@ -24,7 +24,7 @@ int main(void){
 	
 	CANInit(CAN_500KBPS);
 	EncoderInit();
-	TimerInit(25);
+	TimerInit(200);
 	VirtualComInit();
 
 	CAN_msg_t CAN_drive;     
@@ -33,7 +33,7 @@ int main(void){
 	
 	CAN_drive.id = DRIVE_CONTROL_ID + 1;
 	
-	v.float_var = -100.0;
+	v.float_var = 100.0;
 	u.float_var = 0.0;
 	
 	//set velocity to 100 for drive messages
@@ -51,13 +51,33 @@ int main(void){
 	volatile uint16_t encoder_reading;
 	uint16_t old_encoder_reading = 0x0000;
 	
+	CAN_msg_t testCAN;
+	
 	while(1) 
 	{
 		
+		/*
+		if (CANMsgAvail())
+		{
+			CANReceive(&testCAN);
+			
+			
+			if (testCAN.id > 0x500 && testCAN.id < 0x600)
+			{
+				SendInt(testCAN.id);
+				
+				SendLine();
+			}
+				
+		}
+		*/
+		
+		
+		
 		encoder_reading = EncoderRead();
 		
-		SendInt(encoder_reading);
-		SendLine();
+		//SendInt(encoder_reading);
+		//SendLine();
 		
 		
 		//If the encoder count changed, send new drive CAN message and restart timer
@@ -69,13 +89,15 @@ int main(void){
 			//Use a parabolic scaling
 			//u.float_var = (float)(2*((float) encoder_reading/PEDAL_MAX) - ((float) encoder_reading/PEDAL_MAX)*((float) encoder_reading/PEDAL_MAX));		
 			u.float_var = (float) ((float) encoder_reading/PEDAL_MAX);
-			
+				
 			CAN_drive.data[4] = u.chars[0];
 			CAN_drive.data[5] = u.chars[1];
 			CAN_drive.data[6] = u.chars[2];
 			CAN_drive.data[7] = u.chars[3];
 			
 			CANSend(&CAN_drive);
+			//SendInt(DRIVE_CONTROL_ID + 1);
+			//SendLine();
 		
 			RestartTimer();
 		
@@ -85,6 +107,9 @@ int main(void){
 		{	
 			
 			CANSend (&CAN_drive);
+			//SendInt(DRIVE_CONTROL_ID + 1);
+			//SendLine();
+			
 			
 			timeoutFlag = FALSE;
 			RestartTimer();
