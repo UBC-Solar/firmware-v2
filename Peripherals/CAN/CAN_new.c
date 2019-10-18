@@ -100,17 +100,17 @@ void CAN_SignalUnitEvent(uint32_t event)
 		case ARM_CAN_EVENT_UNIT_INACTIVE: 
 			break; 
 		
-    case ARM_CAN_EVENT_UNIT_ACTIVE:
-      break;
+		case ARM_CAN_EVENT_UNIT_ACTIVE:
+			break;
 		
-    case ARM_CAN_EVENT_UNIT_WARNING:
-      break;
+		case ARM_CAN_EVENT_UNIT_WARNING:
+			break;
 		
-    case ARM_CAN_EVENT_UNIT_PASSIVE:
-      break;
+		case ARM_CAN_EVENT_UNIT_PASSIVE:
+			break;
 		
-    case ARM_CAN_EVENT_UNIT_BUS_OFF:
-      break;
+		case ARM_CAN_EVENT_UNIT_BUS_OFF:
+			break;
 		
 		default: 
 			break;
@@ -171,10 +171,10 @@ void CAN_SignalObjectEvent(uint32_t obj_idx, uint32_t event)
 	
 bool CAN_Initialize(void) 
 {
-  ARM_CAN_CAPABILITIES     can_cap;
-  ARM_CAN_OBJ_CAPABILITIES can_obj_cap;
-  uint32_t                 count;
-  uint32_t                 num_objects;
+	ARM_CAN_CAPABILITIES     can_cap;
+	ARM_CAN_OBJ_CAPABILITIES can_obj_cap;
+	uint32_t                 count;
+	uint32_t                 num_objects;
 	uint32_t                 clock; 
 	int32_t                  status;
 	
@@ -192,105 +192,105 @@ bool CAN_Initialize(void)
 #endif //CAN_TX_ENABLE
 	
 	// Initialization
-  status = ptrCAN->Initialize(CAN_SignalUnitEvent, CAN_SignalObjectEvent);
-  if (status != ARM_DRIVER_OK) Error_Handler(DRIVER_INIT_FAIL); 
+	status = ptrCAN->Initialize(CAN_SignalUnitEvent, CAN_SignalObjectEvent);
+	if (status != ARM_DRIVER_OK) Error_Handler(DRIVER_INIT_FAIL); 
 
 	// Power up controller
-  status = ptrCAN->PowerControl(ARM_POWER_FULL);
-  if (status != ARM_DRIVER_OK) Error_Handler(POWER_UP_FAIL); 
+	status = ptrCAN->PowerControl(ARM_POWER_FULL);
+	if (status != ARM_DRIVER_OK) Error_Handler(POWER_UP_FAIL); 
 
 	// Set mode to initialization
-  status = ptrCAN->SetMode(ARM_CAN_MODE_INITIALIZATION);
-  if (status != ARM_DRIVER_OK) Error_Handler(INIT_MODE_FAIL); 
+	status = ptrCAN->SetMode(ARM_CAN_MODE_INITIALIZATION);
+	if (status != ARM_DRIVER_OK) Error_Handler(INIT_MODE_FAIL); 
 
 	// Set CAN bit rate
-  clock = ptrCAN->GetClock();                                                   // Get CAN base clock
-  if ((clock % (8U*CAN_BITRATE_NOMINAL)) == 0U)                                 // If CAN base clock is divisible by 8 * nominal bitrate without remainder
+	clock = ptrCAN->GetClock();                                                   // Get CAN base clock
+	if ((clock % (8U*CAN_BITRATE_NOMINAL)) == 0U)                                 // If CAN base clock is divisible by 8 * nominal bitrate without remainder
 	{
-    status = ptrCAN->SetBitrate    (ARM_CAN_BITRATE_NOMINAL,                    // Set nominal bitrate
+		status = ptrCAN->SetBitrate    (ARM_CAN_BITRATE_NOMINAL,                    // Set nominal bitrate
                                     CAN_BITRATE_NOMINAL,                        // Set nominal bitrate to configured constant value
                                     ARM_CAN_BIT_PROP_SEG  (5U) |                // Set propagation segment to 5 time quanta
                                     ARM_CAN_BIT_PHASE_SEG1(1U) |                // Set phase segment 1 to 1 time quantum (sample point at 87.5% of bit time)
                                     ARM_CAN_BIT_PHASE_SEG2(1U) |                // Set phase segment 2 to 1 time quantum (total bit is 8 time quanta long)
                                     ARM_CAN_BIT_SJW       (1U));                // Resynchronization jump width is same as phase segment 2
-  }
+	}
 	else if ((clock % (10U*CAN_BITRATE_NOMINAL)) == 0U)                           // If CAN base clock is divisible by 10 * nominal bitrate without remainder
 	{
-    status = ptrCAN->SetBitrate    (ARM_CAN_BITRATE_NOMINAL,                    // Set nominal bitrate
+		status = ptrCAN->SetBitrate    (ARM_CAN_BITRATE_NOMINAL,                    // Set nominal bitrate
                                     CAN_BITRATE_NOMINAL,                        // Set nominal bitrate to configured constant value
                                     ARM_CAN_BIT_PROP_SEG  (7U) |                // Set propagation segment to 7 time quanta
                                     ARM_CAN_BIT_PHASE_SEG1(1U) |                // Set phase segment 1 to 1 time quantum (sample point at 90% of bit time)
                                     ARM_CAN_BIT_PHASE_SEG2(1U) |                // Set phase segment 2 to 1 time quantum (total bit is 10 time quanta long)
                                     ARM_CAN_BIT_SJW       (1U));                // Resynchronization jump width is same as phase segment 2
-  }
+	}
 	else if ((clock % (12U*CAN_BITRATE_NOMINAL)) == 0U)                           // If CAN base clock is divisible by 12 * nominal bitrate without remainder
 	{
-    status = ptrCAN->SetBitrate    (ARM_CAN_BITRATE_NOMINAL,                    // Set nominal bitrate
+		status = ptrCAN->SetBitrate    (ARM_CAN_BITRATE_NOMINAL,                    // Set nominal bitrate
                                     CAN_BITRATE_NOMINAL,                        // Set nominal bitrate to configured constant value
                                     ARM_CAN_BIT_PROP_SEG  (7U) |                // Set propagation segment to 7 time quanta
                                     ARM_CAN_BIT_PHASE_SEG1(2U) |                // Set phase segment 1 to 2 time quantum (sample point at 83.3% of bit time)
                                     ARM_CAN_BIT_PHASE_SEG2(2U) |                // Set phase segment 2 to 2 time quantum (total bit is 12 time quanta long)
                                     ARM_CAN_BIT_SJW       (2U));                // Resynchronization jump width is same as phase segment 2
-  }
+	}
 	else Error_Handler(UNSUPPORTED_BIT_RATE_FAIL); 
-  if (status != ARM_DRIVER_OK) Error_Handler(BIT_RATE_SET_FAIL);
+	if (status != ARM_DRIVER_OK) Error_Handler(BIT_RATE_SET_FAIL);
 
 	// Reserve RX/TX Objects
 	can_cap = ptrCAN->GetCapabilities();                                          // Get CAN driver capabilities
-  num_objects = can_cap.num_objects;                                            // Number of receive/transmit objects
+	num_objects = can_cap.num_objects;                                            // Number of receive/transmit objects
 	
-  for (count = 0U; count < num_objects; ++count)
+	for (count = 0U; count < num_objects; ++count)
 	{                                                                             // Find first available object for receive and transmit
-    can_obj_cap = ptrCAN->ObjectGetCapabilities(count);                         // Get object capabilities
+		can_obj_cap = ptrCAN->ObjectGetCapabilities(count);                         // Get object capabilities
 		
 #if CAN_RX_ENABLE
-    if ((rx_obj_idx == 0xFFFFFFFFU) && (can_obj_cap.rx == 1U))
-    { 
+		if ((rx_obj_idx == 0xFFFFFFFFU) && (can_obj_cap.rx == 1U))
+		{ 
 			rx_obj_idx = count;
 		}
 #endif //CAN_RX_ENABLE
 		
 #if CAN_TX_ENABLE
-    else if ((tx_obj_idx == 0xFFFFFFFFU) && (can_obj_cap.tx == 1U))
+		else if ((tx_obj_idx == 0xFFFFFFFFU) && (can_obj_cap.tx == 1U))
 		{ 
 			tx_obj_idx = count;
 			break;
 		}
 #endif //CAN_TX_ENABLE
-  }
+	}
 
 #if (CAN_RX_ENABLE || CAN_TX_ENABLE)
-  if ((rx_obj_idx == 0xFFFFFFFFU) || (tx_obj_idx == 0xFFFFFFFFU)) Error_Handler(OBJECT_ALLOC_FAIL); 
+	if ((rx_obj_idx == 0xFFFFFFFFU) || (tx_obj_idx == 0xFFFFFFFFU)) Error_Handler(OBJECT_ALLOC_FAIL); 
 #endif //(CAN_RX_ENABLE || CAN_TX_ENABLE)
 	
 #if CAN_RX_ENABLE
 	// Configure receive object
-	if (can_obj_cap.rx != 1U) Error_Handler(RX_UNSUPPORTED_FAIL); 
-  status = ptrCAN->ObjectConfigure(rx_obj_idx, ARM_CAN_OBJ_RX);
-  if (status != ARM_DRIVER_OK) Error_Handler(OBJECT_CONFIG_FAIL);
+	if (can_obj_cap.rx != 1U) Error_Handler(RX_UNSUPPORTED_FAIL);
+	status = ptrCAN->ObjectConfigure(rx_obj_idx, ARM_CAN_OBJ_RX);
+	if (status != ARM_DRIVER_OK) Error_Handler(OBJECT_CONFIG_FAIL);
 #endif //CAN_RX_ENABLE
 	
 #if CAN_TX_ENABLE
 	// Configure transmit object
 	if (can_obj_cap.tx != 1U) Error_Handler(TX_UNSUPPORTED_FAIL);; 
-  status = ptrCAN->ObjectConfigure(tx_obj_idx, ARM_CAN_OBJ_TX);
-  if (status != ARM_DRIVER_OK) Error_Handler(OBJECT_CONFIG_FAIL);
+	status = ptrCAN->ObjectConfigure(tx_obj_idx, ARM_CAN_OBJ_TX);
+	if (status != ARM_DRIVER_OK) Error_Handler(OBJECT_CONFIG_FAIL);
 #endif //CAN_TX_ENABLE
 	
 #if CAN_LOOPBACK
 	// Loopback mode used for testing
-  if (can_cap.external_loopback != 1U) Error_Handler(LOOPBACK_UNSUPPORTED_FAIL);
+	if (can_cap.external_loopback != 1U) Error_Handler(LOOPBACK_UNSUPPORTED_FAIL);
 	
 	// Activate loopback external mode
-  status = ptrCAN->SetMode (ARM_CAN_MODE_LOOPBACK_EXTERNAL);
-  if (status != ARM_DRIVER_OK) Error_Handler(LOOPBACK_SET_FAIL);
+	status = ptrCAN->SetMode (ARM_CAN_MODE_LOOPBACK_EXTERNAL);
+	if (status != ARM_DRIVER_OK) Error_Handler(LOOPBACK_SET_FAIL);
 #else
 	// Activate normal operation mode
-  status = ptrCAN->SetMode (ARM_CAN_MODE_NORMAL);                              
-  if (status != ARM_DRIVER_OK) Error_Handler(NORMAL_MODE_FAIL);
+	status = ptrCAN->SetMode (ARM_CAN_MODE_NORMAL);                              
+	if (status != ARM_DRIVER_OK) Error_Handler(NORMAL_MODE_FAIL);
 #endif //CAN_LOOPBACK
-	
-  return true;
+
+	return true;
 }
 
 /**
