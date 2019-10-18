@@ -17,7 +17,7 @@ osThreadId XBeeThreadID;
  */
 osStatus XBeeInit(void)
 {
-	XBeeThreadID = osThreadCreate (osThread(XBeeThread), NULL);
+	XBeeThreadID = osThreadCreate(osThread(XBeeThread), NULL);
 	if (!XBeeThreadID) return osErrorOS;
 	
 	XBeeMailBoxID = osMailCreate(osMailQ(XBeeMailBox), NULL);
@@ -148,11 +148,14 @@ void XBeeSendByte(char c)
 
 }
 
-
+/** 
+ * Thread that is inactive until a message has been queued up 
+ */
 void XBeeThread(void const *argument)
 {
   osEvent evt; 
 	CAN_msg_t* msg_tx;
+	
   while (1)
 	{
 		evt = osMailGet(XBeeMailBoxID, osWaitForever);
@@ -164,5 +167,3 @@ void XBeeThread(void const *argument)
 		osMailFree(XBeeMailBoxID, msg_tx);
   }
 }
-
-

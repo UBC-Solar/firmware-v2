@@ -398,7 +398,7 @@ void InitialiseLCDPins(void)
 {
 	
 	//Setup System Clock C
-    RCC->APB2ENR &= 0;
+	RCC->APB2ENR &= 0;
 	RCC->APB2ENR |= 0x1UL << 4;
 	
 	//Setup Pins C5 - C12 as OUTPUT

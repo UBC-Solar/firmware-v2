@@ -18,5 +18,7 @@
 
 #define RTE_CMSIS_RTOS                  /* CMSIS-RTOS */
         #define RTE_CMSIS_RTOS_RTX              /* CMSIS-RTOS Keil RTX */
+#define RTE_Drivers_CAN1                /* Driver CAN1 */
+        #define RTE_Drivers_CAN2                /* Driver CAN2 */
 
 #endif /* RTE_COMPONENTS_H */

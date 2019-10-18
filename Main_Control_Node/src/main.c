@@ -1,7 +1,7 @@
 #include "stm32f10x.h"
 
 #include "LCD/LCD.h"
-#include "CAN.h"
+#include "CAN_new.h"
 #include "XBee/XBee.h"
 #include "virtual_com.h"
 
@@ -48,7 +48,7 @@ int main(void)
 	osKernelInitialize();
 	
 	InitialiseLCDPins();
-	CANInit();
+	CANInit(CAN_1000KBPS);
 	ScreenSetup();
 	InitLEDs();
 	VirtualComInit();
