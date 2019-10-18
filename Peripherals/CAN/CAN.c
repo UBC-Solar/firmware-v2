@@ -1,11 +1,13 @@
+
 /**
  * Function implementations for enabling and using CAN messaging.
  */
 #include "CAN.h"
-
+#include "virtual_com.h"
 
 CAN_bit_timing_config_t can_configs[6] = {{2, 13, 45}, {2, 15, 20}, {2, 13, 18}, {2, 13, 9}, {2, 15, 4}, {2, 15, 2}};
 
+	
 /**
  * Initializes the CAN controller with specified bit rate.
  *
@@ -46,66 +48,49 @@ CAN_bit_timing_config_t can_configs[6] = {{2, 13, 45}, {2, 15, 20}, {2, 13, 18},
 	
 	CAN1->FMR   &= ~(0x1UL);			  // Deactivate initialization mode
 	CAN1->MCR   &= ~(0x1UL);              // Set CAN to normal mode 
+
 	while (CAN1->MSR & 0x1UL); 
  
-}
-
-/**
- * Function add id to a set of ids to be allowed (filtered in) by the CAN controller
- * 
- * @params id - id to be added
- *  
- */ 
-void CANSetFilter(uint16_t id)
-{
-	static uint32_t filterID = 0;
-
-	// Out of filter banks	 
-	if (filterID == 112)
-	{
-		return;
-	}
+ }
+ 
+ void CANSetFilter(uint16_t id)
+ {
+	 static uint32_t filterID = 0;
 	 
-	CAN1->FMR  |=   0x1UL;                // Set to filter initialization mode
+	 if (filterID == 112)
+	 {
+		 return;
+	 }
 	 
-	switch(filterID%4)
-	{
-		case 0:
-			// if we need another filter bank, initialize it
-			CAN1->FA1R |= 0x1UL <<(filterID/4);
-			CAN1->FM1R |= 0x1UL << (filterID/4);
+	 CAN1->FMR  |=   0x1UL;                // Set to filter initialization mode
+	 
+	 switch(filterID%4)
+	 {
+		 case 0:
+				// if we need another filter bank, initialize it
+				CAN1->FA1R |= 0x1UL <<(filterID/4);
+				CAN1->FM1R |= 0x1UL << (filterID/4);
 		    CAN1->FS1R &= ~(0x1UL << (filterID/4)); 
-
-			// Set both registers to filtered ID
-			CAN1->sFilterRegister[filterID/4].FR1 = (id << 5) | (id << 21);
+				
+				CAN1->sFilterRegister[filterID/4].FR1 = (id << 5) | (id << 21);
 		    CAN1->sFilterRegister[filterID/4].FR2 = (id << 5) | (id << 21);
-			break;
-		case 1:
-			// if we already have a filter bank, set the upper 16 bits to new id
-			CAN1->sFilterRegister[filterID/4].FR1 &= 0x0000FFFF;
-			CAN1->sFilterRegister[filterID/4].FR1 |= id << 21;
-			break;
-		case 2:
-			// set the second register to new id (both upper and lower 16 bits)
-			CAN1->sFilterRegister[filterID/4].FR2 = (id << 5) | (id << 21);
+				break;
+		 case 1:
+			  CAN1->sFilterRegister[filterID/4].FR1 &= 0x0000FFFF;
+				CAN1->sFilterRegister[filterID/4].FR1 |= id << 21;
+			  break;
+		 case 2:
+				CAN1->sFilterRegister[filterID/4].FR2 = (id << 5) | (id << 21);
 		    break;
-		case 3:
-			// set the second register's upper 16 bits to new id
-			CAN1->sFilterRegister[filterID/4].FR2 &= 0x0000FFFF;
-			CAN1->sFilterRegister[filterID/4].FR2 |= id << 21;
-			break;
-	}
-	filterID++;
-	CAN1->FMR   &= ~(0x1UL);			  // Deactivate initialization mode
-}
-
-/**
- * Function adds a set of ids to the set of ids to be allowed (filtered in)
- * 
- * @params ids - array of ids to be filtered
- * @params num - number of ids to be filtered
- * 
- */
+		 case 3:
+			  CAN1->sFilterRegister[filterID/4].FR2 &= 0x0000FFFF;
+				CAN1->sFilterRegister[filterID/4].FR2 |= id << 21;
+				break;
+	 }
+	 filterID++;
+	 CAN1->FMR   &= ~(0x1UL);			  // Deactivate initialization mode
+ }
+ 
 void CANSetFilters(uint16_t* ids, uint8_t num)
 {
 	for (int i = 0; i < num; i++)
@@ -149,6 +134,8 @@ void CANSetFilters(uint16_t* ids, uint8_t num)
  */
  void CANSend(CAN_msg_t* CAN_tx_msg)
  {
+	volatile int count = 0;
+	 
 	CAN1->sTxMailBox[0].TIR   = (CAN_tx_msg->id) << 21;
 	
 	CAN1->sTxMailBox[0].TDTR &= ~(0xF);
@@ -164,7 +151,20 @@ void CANSetFilters(uint16_t* ids, uint8_t num)
 								 ((uint32_t) CAN_tx_msg->data[4]      ));
 
 	CAN1->sTxMailBox[0].TIR  |= 0x1UL;
-	while(CAN1->sTxMailBox[0].TIR & 0x1UL);
+	while(CAN1->sTxMailBox[0].TIR & 0x1UL && count++ < 1000000);
+	 
+	 if (!(CAN1->sTxMailBox[0].TIR & 0x1UL)) return;
+	 
+	 while (CAN1->sTxMailBox[0].TIR & 0x1UL)
+	 {
+		 SendInt(CAN1->ESR);
+		 SendLine();
+		 SendInt(CAN1->MSR);
+		 SendLine();
+		 SendInt(CAN1->TSR);
+		 SendLine();
+		 SendLine();
+	 }
  }
 
  /**
@@ -177,3 +177,4 @@ void CANSetFilters(uint16_t* ids, uint8_t num)
  {
 	 return CAN1->RF0R & 0x3UL;
 }
+

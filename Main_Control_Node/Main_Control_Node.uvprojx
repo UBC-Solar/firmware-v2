@@ -176,7 +176,7 @@
             <GenPPlst>0</GenPPlst>
             <AdsCpuType>"Cortex-M3"</AdsCpuType>
             <RvctDeviceName></RvctDeviceName>
-            <mOS>0</mOS>
+            <mOS>1</mOS>
             <uocRom>0</uocRom>
             <uocRam>0</uocRam>
             <hadIROM>1</hadIROM>
@@ -463,10 +463,23 @@
   </Targets>
 
   <RTE>
-    <apis/>
+    <apis>
+      <api Capiversion="1.0.0" Cclass="CMSIS" Cgroup="RTOS" exclusive="1">
+        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.5.0"/>
+        <targetInfos>
+          <targetInfo name="Main"/>
+        </targetInfos>
+      </api>
+    </apis>
     <components>
-      <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="5.0.2" condition="ARMv6_7_8-M Device">
-        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.2.0"/>
+      <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="5.2.0" condition="ARMv6_7_8-M Device">
+        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.5.0"/>
+        <targetInfos>
+          <targetInfo name="Main"/>
+        </targetInfos>
+      </component>
+      <component Capiversion="1.0.0" Cclass="CMSIS" Cgroup="RTOS" Csub="Keil RTX" Cvendor="ARM" Cversion="4.81.1" condition="RTOS RTX">
+        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.5.0"/>
         <targetInfos>
           <targetInfo name="Main"/>
         </targetInfos>
@@ -479,6 +492,14 @@
       </component>
     </components>
     <files>
+      <file attr="config" category="source" name="CMSIS\RTOS\RTX\Templates\RTX_Conf_CM.c" version="4.70.1">
+        <instance index="0">RTE\CMSIS\RTX_Conf_CM.c</instance>
+        <component Capiversion="1.0.0" Cclass="CMSIS" Cgroup="RTOS" Csub="Keil RTX" Cvendor="ARM" Cversion="4.81.1" condition="RTOS RTX" isDefaultVariant="1"/>
+        <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="5.5.0"/>
+        <targetInfos>
+          <targetInfo name="Main"/>
+        </targetInfos>
+      </file>
       <file attr="config" category="header" name="RTE_Driver\Config\RTE_Device.h" version="1.1.2">
         <instance index="0">RTE\Device\STM32F103RB\RTE_Device.h</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="Keil" Cversion="1.0.0" condition="STM32F1xx CMSIS"/>

@@ -35,6 +35,9 @@ void ADCInit(void){
 uint16_t ReadADC(void){
 	
 	uint16_t ADC_reading = ADC2->DR;
+	
+	//SendString("    Raw ADC Reading:");
+	//SendInt(ADC_reading);
 
 	if (ADC_reading > ADC_ZERO_THRESHOLD)
 	{

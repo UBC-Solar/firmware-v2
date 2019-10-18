@@ -1,3 +1,4 @@
+
 /**
  * This is the header file for the CAN driver.
  * 
@@ -68,6 +69,10 @@ extern CAN_bit_timing_config_t can_configs[6];
  */
  void CANSend(CAN_msg_t* CAN_tx_msg);
  
+ void CANSetFilter(uint16_t id);
+ 
+ void CANSetFilters(uint16_t* ids, uint8_t num);
+ 
 /**
  * Returns whether there are CAN messages available.
  *
@@ -75,25 +80,6 @@ extern CAN_bit_timing_config_t can_configs[6];
  *
  */
  uint8_t CANMsgAvail(void);
-
-/**
- * Function adds a set of ids to the set of ids to be allowed (filtered in)
- * 
- * @params ids - array of ids to be filtered
- * @params num - number of ids to be filtered
- * 
- */
-void CANSetFilters(uint16_t* ids, uint8_t num);
-
-/**
- * Decodes CAN messages from the data registers and populates a 
- * CAN message struct with the data fields.
- * 
- * @preconditions A valid CAN message is received
- * @params CAN_rx_msg - CAN message struct that will be populated
- * 
- */
- void CANReceive(CAN_msg_t* CAN_rx_msg);
  
  extern CAN_msg_t CAN_rx_msg;  // Holds receiving CAN messages
  extern CAN_msg_t CAN_tx_msg;  // Holds transmitted CAN messagess
