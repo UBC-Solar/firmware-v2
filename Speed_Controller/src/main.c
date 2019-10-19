@@ -84,13 +84,6 @@ int main(void){
 		{
 
 			
-				RestartTimer();
-			}		
-			//if encoder count changed, send new drive CAN message and restart timer
-			else if(old_encoder_reading != encoder_reading && (ADC_reading == 0 || !regen_enabled))
-			{
-				StopTimer();
-			
 			//Use a parabolic scaling
 			//u.float_var = (float)(2*((float) encoder_reading/PEDAL_MAX) - ((float) encoder_reading/PEDAL_MAX)*((float) encoder_reading/PEDAL_MAX));		
 			u.float_var = (float) ((float) encoder_reading/PEDAL_MAX);
