@@ -9,6 +9,8 @@
 
 #define DRIVE_CONTROL_ID 0x400
 #define BATTERY_FULL_MSG 0x622
+#define BATT_BASE 0x620
+
 #define ADC_MAX 255					// TODO: find out what the actual ADC_MAX is
 
 #define REGENTOGGLE 1
@@ -111,10 +113,15 @@ int main(void){
 	CAN_msg_t testCAN;
 	CAN_msg_t CAN_drive;
 
+	CAN_msg_t CAN_rx_msg;
+  CAN_msg_t CAN_tx_msg;
+	
 	volatile uint16_t encoder_reading;
 	volatile uint16_t adc_reading;
 
 	uint16_t old_encoder_reading = 0x0000;
+	
+	uint8_t batteryPercent = 0x00;
 
 	u.float_var = 0.0;
 	//set initial values to current
@@ -128,26 +135,21 @@ int main(void){
 	while(1) 
 	{
 		
-		/*
+		
 		if (CANMsgAvail())
 		{
-			CANReceive(&testCAN);
+			CANReceive(&CAN_rx_msg);
 			
-			
-			if (testCAN.id > 0x500 && testCAN.id < 0x600)
-			{
-				SendInt(testCAN.id);
-				
-				SendLine();
+			if(CAN_rx_msg.id == BATT_BASE + 6) {
+				batteryPercent = (int8_t) CAN_rx_msg.data[0]; //Im just going to assume that this gives a percentage? 0-100?
 			}
-				
 		}
-		*/
+		
 		
 		//SendInt(encoder_reading);
 		//SendLine();
 		
-		if(REGENTOGGLE) {
+		if(REGENTOGGLE && batteryPercent < 98) { //Checks to see if the REGEN is ON and if the batter is under 98%
 			if(adc_reading != 0) {
 				sendRegenCommand();
 			}
