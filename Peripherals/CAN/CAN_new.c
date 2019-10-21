@@ -118,7 +118,7 @@ void Error_Handler(enum CAN_Error error)
 }
 
 /**
- * DO NOT CHANGE THE FUNCTION NAME - function name is internally registered callback
+ * DO NOT CHANGE THE FUNCTION NAME - function name is internally registered ISR callback
  * Callback evoked when the CAN driver changes states 
  * Handlers for state changes should be placed within this callback
  * 
@@ -155,7 +155,7 @@ void CAN_SignalUnitEvent(uint32_t event)
 }
 
 /**
- * DO NOT CHANGE THE FUNCTION NAME - function name is internally registered callback
+ * DO NOT CHANGE THE FUNCTION NAME - function name is internally registered ISR callback
  * Callback evoked when any registered CAN object has an event
  * Handlers for different events should be placed within this callback
  * 
@@ -180,7 +180,8 @@ void CAN_SignalObjectEvent(uint32_t obj_idx, uint32_t event)
 #if CAN_RX_ENABLE
 			if (obj_idx == rx_obj_idx)
 			{
-				msg_rx = (CAN_Message*)osMailAlloc(CAN_RXMailbox_id, osWaitForever);
+				// This will not wait for slot to free up as it runs in ISR
+				msg_rx = (CAN_Message*)osMailAlloc(CAN_RXMailbox_id, 0);
 				if (!msg_rx)
 				{
 					Error_Handler(RX_MESSAGE_QUEUE_FAIL);
@@ -365,7 +366,7 @@ void CAN_SendMessage(CAN_Message* msg_tx)
 {
 	memset(&tx_msg_info, 0U, sizeof(ARM_CAN_MSG_INFO));
 	tx_msg_info.id = ARM_CAN_EXTENDED_ID(msg_tx->id);
-	if (ptrCAN->MessageSend(tx_obj_idx, &tx_msg_info, msg_tx->data, msg_tx->len) != ARM_DRIVER_OK)
+	if (ptrCAN->MessageSend(tx_obj_idx, &tx_msg_info, msg_tx->data, msg_tx->len) != msg_tx->len)
 	{
 		Error_Handler(TX_SEND_FAIL);
 	}
