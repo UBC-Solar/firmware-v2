@@ -46,7 +46,8 @@ osThreadId CAN_TXThread_id;
 #endif //CAN_TX_ENABLE
 
 
-enum CAN_Error {
+enum CAN_Error
+{
 	DRIVER_INIT_FAIL,
 	POWER_UP_FAIL, 
 	FILTER_SET_FAIL,
@@ -75,8 +76,44 @@ enum CAN_Error {
  */
 void Error_Handler(enum CAN_Error error)
 {
-	while (1)
+	switch (error)
 	{
+		case DRIVER_INIT_FAIL:
+			while (1) ;
+		case POWER_UP_FAIL:
+			while (1) ;
+		case FILTER_SET_FAIL:
+			while (1) ;
+		case INIT_MODE_FAIL:
+			while (1) ;
+		case NORMAL_MODE_FAIL:
+			while (1) ;
+		case UNSUPPORTED_BIT_RATE_FAIL: 
+			while (1) ;
+		case BIT_RATE_SET_FAIL:
+			while (1) ;
+		case OBJECT_ALLOC_FAIL:
+			while (1) ;
+		case OBJECT_CONFIG_FAIL: 
+			while (1) ;
+		case RX_UNSUPPORTED_FAIL:
+			while (1) ;
+		case RX_MESSAGE_QUEUE_FAIL:
+			while (1) ;
+		case TX_UNSUPPORTED_FAIL:
+			while (1) ;
+		case TX_MESSAGE_QUEUE_FAIL:
+			while (1) ;
+		case TX_SEND_FAIL:
+			while (1) ;
+		case LOOPBACK_UNSUPPORTED_FAIL: 
+			while (1) ;
+		case LOOPBACK_SET_FAIL:
+			while (1) ;
+		case UNKNOWN:
+			while (1) ;
+		default: 
+			while (1) ;
 	}
 }
 
@@ -191,6 +228,9 @@ bool CAN_Initialize(void)
 	if (!CAN_TXThread_id) return false;
 #endif //CAN_TX_ENABLE
 	
+	can_cap = ptrCAN->GetCapabilities();                                          // Get CAN driver capabilities
+	num_objects = can_cap.num_objects;                                            // Number of receive/transmit objects
+	
 	// Initialization
 	status = ptrCAN->Initialize(CAN_SignalUnitEvent, CAN_SignalObjectEvent);
 	if (status != ARM_DRIVER_OK) Error_Handler(DRIVER_INIT_FAIL); 
@@ -236,9 +276,6 @@ bool CAN_Initialize(void)
 	if (status != ARM_DRIVER_OK) Error_Handler(BIT_RATE_SET_FAIL);
 
 	// Reserve RX/TX Objects
-	can_cap = ptrCAN->GetCapabilities();                                          // Get CAN driver capabilities
-	num_objects = can_cap.num_objects;                                            // Number of receive/transmit objects
-	
 	for (count = 0U; count < num_objects; ++count)
 	{                                                                             // Find first available object for receive and transmit
 		can_obj_cap = ptrCAN->ObjectGetCapabilities(count);                         // Get object capabilities
@@ -258,21 +295,17 @@ bool CAN_Initialize(void)
 		}
 #endif //CAN_TX_ENABLE
 	}
-
-#if (CAN_RX_ENABLE || CAN_TX_ENABLE)
-	if ((rx_obj_idx == 0xFFFFFFFFU) || (tx_obj_idx == 0xFFFFFFFFU)) Error_Handler(OBJECT_ALLOC_FAIL); 
-#endif //(CAN_RX_ENABLE || CAN_TX_ENABLE)
 	
 #if CAN_RX_ENABLE
 	// Configure receive object
-	if (can_obj_cap.rx != 1U) Error_Handler(RX_UNSUPPORTED_FAIL);
+	if (rx_obj_idx == 0xFFFFFFFFU) Error_Handler(RX_UNSUPPORTED_FAIL);
 	status = ptrCAN->ObjectConfigure(rx_obj_idx, ARM_CAN_OBJ_RX);
 	if (status != ARM_DRIVER_OK) Error_Handler(OBJECT_CONFIG_FAIL);
 #endif //CAN_RX_ENABLE
 	
 #if CAN_TX_ENABLE
 	// Configure transmit object
-	if (can_obj_cap.tx != 1U) Error_Handler(TX_UNSUPPORTED_FAIL);; 
+	if (tx_obj_idx == 0xFFFFFFFFU) Error_Handler(TX_UNSUPPORTED_FAIL);; 
 	status = ptrCAN->ObjectConfigure(tx_obj_idx, ARM_CAN_OBJ_TX);
 	if (status != ARM_DRIVER_OK) Error_Handler(OBJECT_CONFIG_FAIL);
 #endif //CAN_TX_ENABLE
@@ -280,8 +313,6 @@ bool CAN_Initialize(void)
 #if CAN_LOOPBACK
 	// Loopback mode used for testing
 	if (can_cap.external_loopback != 1U) Error_Handler(LOOPBACK_UNSUPPORTED_FAIL);
-	
-	// Activate loopback external mode
 	status = ptrCAN->SetMode (ARM_CAN_MODE_LOOPBACK_EXTERNAL);
 	if (status != ARM_DRIVER_OK) Error_Handler(LOOPBACK_SET_FAIL);
 #else
