@@ -34,28 +34,47 @@ void InitLEDs(void)
 	
 }
 
+void testerbester(CAN_Message* rx_msg)
+{
+	CAN_QueueMessage(rx_msg);
+}
 /**
  * Main procedure
  */
 int main(void)
 {
 	
-	int32_t tempInt32;
-	CAN_msg_t newCanMsg;
-	uint8_t c = 0;
-	uint8_t d = 0;
-	
+	//int32_t tempInt32;
+	//CAN_msg_t newCanMsg;
+	//uint8_t c = 0;
+	//uint8_t d = 0;
+	CAN_Message msg; 
 	osKernelInitialize();
 	
-	InitialiseLCDPins();
-	CANInit(CAN_1000KBPS);
-	ScreenSetup();
-	InitLEDs();
-	VirtualComInit();
-	XBeeInit();
-	
+	//InitialiseLCDPins();
+	//CANInit(CAN_1000KBPS);
+	//ScreenSetup();
+	//InitLEDs();
+	//VirtualComInit();
+	//XBeeInit();
+	CAN_Initialize();
 	osKernelStart();
+	CAN_SetFilter(0x00000001U);
 	
+	msg.id = 0x00000001U;
+	msg.len = 8; 
+	for (int i = 0; i < 8; ++i)
+	{
+		msg.data[i] = i; 
+	}
+	CAN_QueueMessage(&msg);
+	while (1)
+	{
+		osDelay(1000);
+		CAN_PerformOnMessage(testerbester);
+	}
+	
+#if 0
 	while(1)
 	{
 		//If a message can be received,		
@@ -251,4 +270,5 @@ int main(void)
 		}
 		
 	}
+#endif
 }

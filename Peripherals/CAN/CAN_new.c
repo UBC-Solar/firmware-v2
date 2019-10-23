@@ -57,9 +57,12 @@ enum CAN_Error
 	BIT_RATE_SET_FAIL,
 	OBJECT_ALLOC_FAIL,
 	OBJECT_CONFIG_FAIL, 
-	RX_UNSUPPORTED_FAIL, 
+	RX_UNSUPPORTED_FAIL,
+	RX_MAILBOX_CREATE_FAIL,
 	RX_MESSAGE_QUEUE_FAIL,
 	TX_UNSUPPORTED_FAIL,
+	TX_THREAD_CREATE_FAIL,
+	TX_MAILBOX_CREATE_FAIL,
 	TX_MESSAGE_QUEUE_FAIL,
 	TX_SEND_FAIL,
 	LOOPBACK_UNSUPPORTED_FAIL, 
@@ -69,8 +72,8 @@ enum CAN_Error
 
 
 /** 
- * Error handler for debugging
- * Check stack to see error message 
+ * Error handler for debugging, remove if unnecessary
+ * Check stack to see error message
  * @Param error: error message corresponding with fail 
  * @Returns: nothing 
  */
@@ -98,9 +101,15 @@ void Error_Handler(enum CAN_Error error)
 			while (1) ;
 		case RX_UNSUPPORTED_FAIL:
 			while (1) ;
+		case RX_MAILBOX_CREATE_FAIL: 
+			while (1) ;
 		case RX_MESSAGE_QUEUE_FAIL:
 			while (1) ;
 		case TX_UNSUPPORTED_FAIL:
+			while (1) ;
+		case TX_THREAD_CREATE_FAIL:
+			while (1) ; 
+		case TX_MAILBOX_CREATE_FAIL:
 			while (1) ;
 		case TX_MESSAGE_QUEUE_FAIL:
 			while (1) ;
@@ -150,7 +159,7 @@ void CAN_SignalUnitEvent(uint32_t event)
 			break;
 		
 		default: 
-			break;
+			Error_Handler(UNKNOWN);
   }
 }
 
@@ -171,6 +180,7 @@ void CAN_SignalObjectEvent(uint32_t obj_idx, uint32_t event)
 {
 	CAN_Message* msg_rx;
 	uint8_t msg_len; 
+
 	switch (event)
 	{
 		case ARM_CAN_EVENT_SEND_COMPLETE: 
@@ -187,6 +197,7 @@ void CAN_SignalObjectEvent(uint32_t obj_idx, uint32_t event)
 					Error_Handler(RX_MESSAGE_QUEUE_FAIL);
 				}
 				
+				memset(msg_rx, 0U, 8U); 
 				msg_len = ptrCAN->MessageRead(rx_obj_idx, &rx_msg_info, msg_rx->data, 8U);
 				msg_rx->len = msg_len; 
 				msg_rx->id = rx_msg_info.id;
@@ -196,18 +207,18 @@ void CAN_SignalObjectEvent(uint32_t obj_idx, uint32_t event)
 					Error_Handler(RX_MESSAGE_QUEUE_FAIL);
 				}
 			}
-#endif
+#endif //CAN_RX_ENABLE
 			break; 
 		
 		case ARM_CAN_EVENT_RECEIVE_OVERRUN: 
 			break; 
 		
 		default: 
-			break;
+			Error_Handler(UNKNOWN);
 	}
 }
 	
-bool CAN_Initialize(void) 
+void CAN_Initialize(void) 
 {
 	ARM_CAN_CAPABILITIES     can_cap;
 	ARM_CAN_OBJ_CAPABILITIES can_obj_cap;
@@ -218,15 +229,15 @@ bool CAN_Initialize(void)
 	
 #if CAN_RX_ENABLE 
 	CAN_RXMailbox_id = osMailCreate(osMailQ(CAN_RXMailbox), NULL);
-	if (!CAN_RXMailbox_id) return false; 
+	if (!CAN_RXMailbox_id) Error_Handler(RX_MAILBOX_CREATE_FAIL);
 #endif //CAN_RX_ENABLE
 
 #if CAN_TX_ENABLE
 	CAN_TXMailbox_id = osMailCreate(osMailQ(CAN_TXMailbox), NULL);
-	if (!CAN_TXMailbox_id) return false; 
+	if (!CAN_TXMailbox_id) Error_Handler(TX_MAILBOX_CREATE_FAIL); 
 	
 	CAN_TXThread_id = osThreadCreate(osThread(CAN_TXThread), NULL);
-	if (!CAN_TXThread_id) return false;
+	if (!CAN_TXThread_id) Error_Handler(TX_THREAD_CREATE_FAIL);
 #endif //CAN_TX_ENABLE
 	
 	can_cap = ptrCAN->GetCapabilities();                                          // Get CAN driver capabilities
@@ -321,8 +332,6 @@ bool CAN_Initialize(void)
 	status = ptrCAN->SetMode (ARM_CAN_MODE_NORMAL);                              
 	if (status != ARM_DRIVER_OK) Error_Handler(NORMAL_MODE_FAIL);
 #endif //CAN_LOOPBACK
-
-	return true;
 }
 
 /**
@@ -355,8 +364,30 @@ void CAN_SetFilters(uint32_t* allowed_ids, uint8_t length)
 #endif //CAN_RX_ENABLE
 }
 
+/**
+ * Yields thread execution until a CAN message has been received 
+ * Function passed will be called with the received message 
+ * Not Available to be called in ISR
+ * @Param fp: callback function on message 
+ * @Returns: nothing 
+ */
+void CAN_PerformOnMessage(void (*fp)(CAN_Message* msg))
+{
+	osEvent      evt;
+	osStatus     result; 
+	CAN_Message* msg_rx;
+	
+	evt = osMailGet(CAN_RXMailbox_id, osWaitForever);
+	if (evt.status == osEventMail)
+	{
+		msg_rx = (CAN_Message*)evt.value.p;
+		fp(msg_rx);
+		result = osMailFree(CAN_RXMailbox_id, msg_rx);
+	}
+}
+
 /** 
- * USE CAN_QueueMessage INSTEAD
+ * USE CAN_QueueMessage INSTEAD UNLESS ABSOLUTELY NECESSARY
  * Sends message with the specified data and id
  * Allows up to 8 bytes to be sent
  * @Param msg_tx: data to be transmitted
@@ -364,6 +395,7 @@ void CAN_SetFilters(uint32_t* allowed_ids, uint8_t length)
  */
 void CAN_SendMessage(CAN_Message* msg_tx)
 {
+	// Set message send parameters here in tx_msg_info struct
 	memset(&tx_msg_info, 0U, sizeof(ARM_CAN_MSG_INFO));
 	tx_msg_info.id = ARM_CAN_EXTENDED_ID(msg_tx->id);
 	if (ptrCAN->MessageSend(tx_obj_idx, &tx_msg_info, msg_tx->data, msg_tx->len) != msg_tx->len)
@@ -374,6 +406,7 @@ void CAN_SendMessage(CAN_Message* msg_tx)
 
 /** 
  * Queues up CAN message to be sent when available 
+ * Safe to be called within ISR 
  * @Param msg_tx: data to be transmitted
  * @Returns: nothing
  */
@@ -381,7 +414,7 @@ void CAN_QueueMessage(CAN_Message* msg_tx)
 {
 	CAN_Message* msg_tx_copy; 
 
-	msg_tx_copy = (CAN_Message*)osMailAlloc(CAN_TXMailbox_id, osWaitForever);
+	msg_tx_copy = (CAN_Message*)osMailAlloc(CAN_TXMailbox_id, 0U);
 	if (!msg_tx_copy)
 	{
 		Error_Handler(TX_MESSAGE_QUEUE_FAIL);
@@ -390,10 +423,7 @@ void CAN_QueueMessage(CAN_Message* msg_tx)
 	msg_tx_copy->id = msg_tx->id; 
 	msg_tx_copy->len = msg_tx->len;
 	memset(msg_tx_copy->data, 0U, 8U);
-	for (uint8_t i = 0; i < msg_tx->len; ++i)
-	{
-		msg_tx_copy->data[i] = msg_tx->data[i];
-	}
+	memcpy(msg_tx_copy->data, msg_tx->data, msg_tx_copy->len);  
 	
 	if (osMailPut(CAN_TXMailbox_id, msg_tx_copy) != osOK) 
 	{
@@ -402,6 +432,7 @@ void CAN_QueueMessage(CAN_Message* msg_tx)
 }
 
 /**
+ * Waits until a message is present in TX mailbox and sends it after
  * @TODO: implement message retries and mailbox timeouts 
  * 
  */
@@ -418,9 +449,9 @@ void CAN_TXThread(void const *argument)
 		{
 			msg_tx = (CAN_Message*)evt.value.p;
 			CAN_SendMessage(msg_tx);
+			osMailFree(CAN_TXMailbox_id, msg_tx);
 		}
-		osMailFree(CAN_TXMailbox_id, msg_tx);
   }
 }
-#endif
+#endif //CAN_TX_ENABLE
 
