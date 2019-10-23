@@ -217,7 +217,10 @@ void CAN_SignalObjectEvent(uint32_t obj_idx, uint32_t event)
 			Error_Handler(UNKNOWN);
 	}
 }
-	
+
+/** 
+ * Initializes the CAN Framework 
+ */ 
 void CAN_Initialize(void) 
 {
 	ARM_CAN_CAPABILITIES     can_cap;
