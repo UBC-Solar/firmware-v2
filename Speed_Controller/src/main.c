@@ -12,6 +12,7 @@
 #define BATT_BASE 0x620
 
 #define ADC_MAX 255					// TODO: find out what the actual ADC_MAX is
+#define ADC_MIN 0                   // TODO: find out what the actual ADC_MIN is
 
 #define TRUE 1
 #define FALSE 0
@@ -72,7 +73,7 @@ int main(void)
 	CAN_msg_t CAN_rx_msg;
 	CAN_msg_t CAN_tx_msg;
 	
-	//CAM motor command setup
+	//CAN motor command setup
 	CAN_drive.len = 8;
 	CAN_drive.id = DRIVE_CONTROL_ID + 1;
 	
