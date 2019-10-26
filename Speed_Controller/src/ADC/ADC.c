@@ -1,6 +1,8 @@
 #include "ADC.h"
 #include "virtual_com.h"
 
+// 0 - 300 hex pot
+
 /** 
  * Initializes an ADC for the regenerative braking toggle
  */

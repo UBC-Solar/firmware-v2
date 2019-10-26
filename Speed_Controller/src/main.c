@@ -11,7 +11,7 @@
 #define BATTERY_FULL_MSG 0x622
 #define BATT_BASE 0x620
 
-#define ADC_MAX 255					// TODO: find out what the actual ADC_MAX is
+#define ADC_MAX 0x300					// TODO: find out what the actual ADC_MAX is
 
 #define TRUE 1
 #define FALSE 0
@@ -37,6 +37,8 @@ void sendMotorCommand(float curr, float vel)
 	v.float_var = vel;
 	u.float_var = curr;
 	
+	//SendString("MOTOR COMMAND");
+	
 	//Set current
 	CAN_drive.data[4] = u.chars[0];
 	CAN_drive.data[5] = u.chars[1];
@@ -50,6 +52,11 @@ void sendMotorCommand(float curr, float vel)
 	CAN_drive.data[3] = v.chars[3];
 	
 	CANSend(&CAN_drive);
+	
+	//SendString(" CURR: ");
+	//SendInt(curr * 100);
+	//SendString(" VEL: ");
+	//SendInt(vel);
 	
 	RestartTimer();
 }
@@ -65,8 +72,11 @@ int main(void)
 	
 	//Setup of RegenToggle
 	RCC->APB2ENR |= (0x1 << 4); //Clock C enable
-	GPIOC->CRL &= ~(0xF << 28); //Reset C7
-	GPIOC->CRL |= (0x4 << 28); //Enable C7 as Input
+	GPIOC->CRH &= ~(0xF); //Reset C8
+	GPIOC->CRH |= (0x4); //Enable C8 as Input
+	
+	GPIOC->CRL &= ~(0xF << 24); //C6
+	GPIOC->CRL |= (0x4 << 24); //C6
 	
 	//CAN recive setup
 	CAN_msg_t CAN_rx_msg;
@@ -76,67 +86,92 @@ int main(void)
 	CAN_drive.len = 8;
 	CAN_drive.id = DRIVE_CONTROL_ID + 1;
 	
+	sendMotorCommand(0, 0);
+	
 	volatile uint16_t encoder_reading;
 	volatile uint16_t adc_reading;
 
 	uint16_t old_encoder_reading = 0x0000;
+	uint16_t old_regen_reading = 0x0000;
+	
 	uint8_t batteryPercent = 0x00;
 	
 	uint8_t regenToggle = 0x00;
-
+//upadte after toogle regen
 	while(1) 
 	{
 		
 		//Gets all new values
 		encoder_reading = EncoderRead();
-		adc_reading = ReadADC();
-		regenToggle = ((GPIOC->IDR >> 7) & 0x1);
+		adc_reading = 0x100; //(ReadADC() >> 4) << 4;
+		
+		
+		regenToggle = ((GPIOC->IDR >> 8) & 0x1);
+		
+		//SendInt((GPIOC->IDR >> 6) & 0x1); //C6 ALSO REVERSE
+		
+		//SendString("adc: ");
+		//SendInt(adc_reading);
+		//SendString(" regen: ");
+		//SendInt(regenToggle);
+		//SendString("    ");
+		//SendString(" old encoder: ");
+		//SendInt(old_encoder_reading);
+		//SendString(" new encoder: ");
+		//SendInt(encoder_reading);
 		
 		//Updates the battery percentage
-		if(CANMsgAvail())
+		
+		if(CANMsgAvail())   //THIS IS NOT WORKING
 		{
 			CANReceive(&CAN_rx_msg);
 			
 			if(CAN_rx_msg.id == BATT_BASE + 6)
 			{
-				batteryPercent = (int8_t) CAN_rx_msg.data[0];
+				batteryPercent = 70; //(int8_t) CAN_rx_msg.data[7];
 			}
 		}
 		
 		
-		//SendInt(encoder_reading);
-		//SendLine();
 		
+		//SendInt(batteryPercent);
+		//SendLine();
+
 		//Checks if Regen is on and battery is beloew 98%
 		if(regenToggle && batteryPercent < 98)
 		{
-			//IChecks for regen knob not at 0
-			if(adc_reading != 0) // TODO: Check for change in adc knob so we dont flood CAN, TODO: Add min for adc knob
+			//SendString(" REGEN ON ");
+			//Checks for regen knob not at 0
+			if(adc_reading != 0 )//& old_regen_reading != adc_reading) // TODO: Check for change in adc knob so we dont flood CAN, TODO: Add min for adc knob
 			{
 				//sends knob percentage and velocity
-				sendMotorCommand(adc_reading/ADC_MAX, 0.000);
+				sendMotorCommand((float) adc_reading/ADC_MAX, 0.000);
+				//SendString(" regen msg ");
 			}
 			else if(old_encoder_reading != encoder_reading) 
 			{
 				//Sends peddle percentage and velocity
-				sendMotorCommand(encoder_reading/PEDAL_MAX, 100.000);
+				sendMotorCommand((float) encoder_reading/(PEDAL_MAX - PEDAL_MIN), 100.000);
+				//SendString(" drive msg ");
 			}
 		
 		} 
 		else 
 		{
+			SendString("REGEN OFF ");
 				//If the encoder count changed, send new drive CAN message and restart timer
 				if(old_encoder_reading != encoder_reading)
 				{
-					sendMotorCommand(encoder_reading/PEDAL_MAX, 100.000);
+					sendMotorCommand((float) encoder_reading/(PEDAL_MAX - PEDAL_MIN), 100.000);
+					//SendString(" drive msg 2 ");
 				}
 		 }
 		
 		//If a timeout occured, send the previously sent CAN drive message
 		if(timeoutFlag == TRUE)
 		{	
-			
-			CANSend (&CAN_drive);
+			//SendString(" TIMEOUT ");
+			CANSend(&CAN_drive);
 			//SendInt(DRIVE_CONTROL_ID + 1);
 			//SendLine();
 			
@@ -144,8 +179,9 @@ int main(void)
 			RestartTimer();
 		}
 		
+		old_regen_reading = adc_reading;
 		old_encoder_reading = encoder_reading;		
-
+		SendLine();
 	}
 	
 }
