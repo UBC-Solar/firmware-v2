@@ -16,18 +16,17 @@ CAN_bit_timing_config_t can_configs[6] = {{2, 13, 45}, {2, 15, 20}, {2, 13, 18},
  */
  void CANInit(enum BITRATE bitrate)
  {
-	RCC->APB1ENR |= 0x2000000UL;  // Enable CAN clock 
-	RCC->APB2ENR |= 0x1UL;				 // Enable AFIO clock
-	AFIO->MAPR   &= 0xFFFF9FFF;   // reset CAN remap
-	AFIO->MAPR   |= 0x00004000;   //   set CAN remap, use PB8, PB9
+	RCC->APB1ENR |= 0x2000000UL;  	// Enable CAN clock 
+	RCC->APB2ENR |= 0x1UL;			// Enable AFIO clock
+	AFIO->MAPR   &= 0xFFFF9FFF;   	// reset CAN remap
+	AFIO->MAPR   |= 0x00004000;   	//  et CAN remap, use PB8, PB9
  
-	RCC->APB2ENR |= 0x8UL;				// Enable GPIOB clock
+	RCC->APB2ENR |= 0x8UL;			// Enable GPIOB clock
 	GPIOB->CRH   &= ~(0xFFUL);
 	GPIOB->CRH   |= 0xB8UL;			// Configure PB8 and PB9
 	GPIOB->ODR |= 0x1UL << 8;
   
-	CAN1->MCR = 0x51UL;
-	//CAN1->MCR     = 0x11UL;      // Set CAN to initialization mode
+	CAN1->MCR = 0x51UL;			    // Set CAN to initialization mode
 	 
 	// Set bit rates 
 	CAN1->BTR &= ~(((0x03) << 24) | ((0x07) << 20) | ((0x0F) << 16) | (0x1FF)); 

@@ -1,0 +1,7 @@
+*
+
+!*.c
+!*.h
+!*.uvprojx
+!*.ino
+!*.gitignore
