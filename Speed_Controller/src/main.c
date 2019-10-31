@@ -32,7 +32,7 @@ int main(void){
 	
 	CAN_drive.id = DRIVE_CONTROL_ID + 1;
 	
-	v.float_var = 100.0;
+	v.float_var = -100.0;
 	u.float_var = 0.0;
 	
 	//set velocity to 100 for drive messages
@@ -50,35 +50,32 @@ int main(void){
 	volatile uint16_t encoder_reading;
 	uint16_t old_encoder_reading = 0x0000;
 	
-	CAN_msg_t testCAN;
+	RCC->APB2ENR |= 0x1 << 2;
+	GPIOA->CRL &= ~(0xF << 20);
+	GPIOA->CRL |= (0x3 << 20);
 	
 	while(1) 
 	{
 		
-		/*
-		if (CANMsgAvail())
-		{
-			CANReceive(&testCAN);
-			
-			
-			if (testCAN.id > 0x500 && testCAN.id < 0x600)
-			{
-				SendInt(testCAN.id);
-				
-				SendLine();
-			}
-				
-		}
-		*/
-		
-		
-		
 		encoder_reading = EncoderRead();
 		
-		//SendInt(encoder_reading);
-		//SendLine();
+		if (timeoutFlag == TRUE)
+		{
+			u.float_var = (float) ((float) encoder_reading/(PEDAL_MAX- PEDAL_MIN));
+				
+			CAN_drive.data[4] = u.chars[0];
+			CAN_drive.data[5] = u.chars[1];
+			CAN_drive.data[6] = u.chars[2];
+			CAN_drive.data[7] = u.chars[3];
+			
+			CANSend (&CAN_drive);
+			
+			timeoutFlag = FALSE;
+			RestartTimer();
+			
+		}
 		
-		
+		/*
 		//If the encoder count changed, send new drive CAN message and restart timer
 		if(old_encoder_reading != encoder_reading)
 		{
@@ -86,7 +83,7 @@ int main(void){
 			
 			//Use a parabolic scaling
 			//u.float_var = (float)(2*((float) encoder_reading/PEDAL_MAX) - ((float) encoder_reading/PEDAL_MAX)*((float) encoder_reading/PEDAL_MAX));		
-			u.float_var = (float) ((float) encoder_reading/PEDAL_MAX);
+			u.float_var = (float) ((float) encoder_reading/(PEDAL_MAX- PEDAL_MIN));
 				
 			CAN_drive.data[4] = u.chars[0];
 			CAN_drive.data[5] = u.chars[1];
@@ -94,8 +91,6 @@ int main(void){
 			CAN_drive.data[7] = u.chars[3];
 			
 			CANSend(&CAN_drive);
-			//SendInt(DRIVE_CONTROL_ID + 1);
-			//SendLine();
 		
 			RestartTimer();
 		
@@ -105,16 +100,23 @@ int main(void){
 		{	
 			
 			CANSend (&CAN_drive);
-			//SendInt(DRIVE_CONTROL_ID + 1);
-			//SendLine();
-			
 			
 			timeoutFlag = FALSE;
 			RestartTimer();
 		}
 		
 		old_encoder_reading = encoder_reading;		
-
+		
+		if ((CAN1->ESR >> 3) & 0x1)
+		{
+			GPIOA->BSRR = 0x1 << 5;
+		}
+		else
+		{
+			GPIOA->BRR = 0x1 << 5;
+		}
+		*/
+		
 	}
 	
 }

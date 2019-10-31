@@ -49,7 +49,25 @@ uint16_t EncoderRead (void) {
 	//SendInt(Encoder_Reading);
 	//SendLine();
 	//ENDTEST
+	
+	if (Encoder_Reading < PEDAL_MIN)
+	{
+		Encoder_Reading = 0;
+	}
+	else if (Encoder_Reading < PEDAL_MAX)
+	{
+		Encoder_Reading = Encoder_Reading - PEDAL_MIN;
+	}
+	else if (Encoder_Reading < PEDAL_OVERLOAD)
+	{
+		Encoder_Reading = PEDAL_MAX - PEDAL_MIN;
+	}
+	else
+	{
+		Encoder_Reading = 0;
+	}
 
+	/*
 	if (Encoder_Reading < PEDAL_MIN)
 	{
 		Encoder_Reading = 0;
@@ -76,8 +94,7 @@ uint16_t EncoderRead (void) {
 	{
 		Encoder_Reading = 0;
 	}
-	
-	
+	*/
 	
 	return Encoder_Reading;
 	

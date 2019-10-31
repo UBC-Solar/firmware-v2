@@ -26,7 +26,8 @@ CAN_bit_timing_config_t can_configs[6] = {{2, 13, 45}, {2, 15, 20}, {2, 13, 18},
 	GPIOB->CRH   |= 0xB8UL;			// Configure PB8 and PB9
 	GPIOB->ODR |= 0x1UL << 8;
   
-	CAN1->MCR     = 0x11UL;      // Set CAN to initialization mode
+	CAN1->MCR = 0x51UL;
+	//CAN1->MCR     = 0x11UL;      // Set CAN to initialization mode
 	 
 	// Set bit rates 
 	CAN1->BTR &= ~(((0x03) << 24) | ((0x07) << 20) | ((0x0F) << 16) | (0x1FF)); 
@@ -155,6 +156,7 @@ void CANSetFilters(uint16_t* ids, uint8_t num)
 	 
 	 if (!(CAN1->sTxMailBox[0].TIR & 0x1UL)) return;
 	 
+	 //Sends error log to screen
 	 while (CAN1->sTxMailBox[0].TIR & 0x1UL)
 	 {
 		 SendInt(CAN1->ESR);
