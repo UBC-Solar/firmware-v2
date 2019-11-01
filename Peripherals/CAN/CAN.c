@@ -32,7 +32,6 @@ CAN_bit_timing_config_t can_configs[6] = {{2, 13, 45}, {2, 15, 20}, {2, 13, 18},
 	CAN1->BTR &= ~(((0x03) << 24) | ((0x07) << 20) | ((0x0F) << 16) | (0x1FF)); 
 	CAN1->BTR |=  (((can_configs[bitrate].TS2-1) & 0x07) << 20) | (((can_configs[bitrate].TS1-1) & 0x0F) << 16) | ((can_configs[bitrate].BRP-1) & 0x1FF);
  
-
 	// Configure Filters to default values
 	CAN1->FM1R |= 0x1C << 8;              // Assign all filters to CAN1
 	CAN1->FMR  |=   0x1UL;                // Set to filter initialization mode

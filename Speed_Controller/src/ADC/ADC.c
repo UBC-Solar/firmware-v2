@@ -40,7 +40,8 @@ uint16_t ReadADC(void){
 	
 	//SendString("    Raw ADC Reading:");
 	//SendInt(ADC_reading);
-
+	
+	/*
 	if (ADC_reading > ADC_ZERO_THRESHOLD)
 	{
 		ADC_reading = 0x000;
@@ -49,6 +50,7 @@ uint16_t ReadADC(void){
 	{
 		ADC_reading = ADC_ZERO_THRESHOLD - ADC_reading;
 	}
+	*/
 	
 	return ADC_reading;
 }
