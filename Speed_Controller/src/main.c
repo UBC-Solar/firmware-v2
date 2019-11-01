@@ -32,6 +32,13 @@ int main(void){
 	
 	CAN_drive.id = DRIVE_CONTROL_ID + 1;
 	
+	//QUICKLY add enable reverse switch for saturday testing
+	//On pin PC6
+	RCC->APB2ENR |= (0x1 << 4);
+	GPIOC->CRL &= ~(0xFF << 24);
+	GPIOC->CRL |= (0x04 << 24);
+	int reverseEnable = 0;
+	
 	v.float_var = 100.0;
 	u.float_var = 0.0;
 	
@@ -71,6 +78,20 @@ int main(void){
 		}
 		*/
 		
+		reverseEnable = ((GPIOC->IDR >> 6) & 0x1);
+		
+		if(reverseEnable)
+		{
+			v.float_var = -100.0;
+		} else
+		{
+			v.float_var = 100.0;
+		}
+		
+		CAN_drive.data[0] = v.chars[0];
+		CAN_drive.data[1] = v.chars[1];
+		CAN_drive.data[2] = v.chars[2];
+		CAN_drive.data[3] = v.chars[3];
 		
 		
 		encoder_reading = EncoderRead();
