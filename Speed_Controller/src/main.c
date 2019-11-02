@@ -9,6 +9,7 @@
 #define DRIVE_CONTROL_ID 0x400
 #define BATTERY_FULL_MSG 0x622
 #define BATT_BASE 0x620
+#define MC_BASE 0x500
 
 #define ADC_MAX 0xFFF				// TODO: find out what the actual ADC_MAX is
 #define ADC_MIN 0                   // TODO: find out what the actual ADC_MIN is
@@ -19,8 +20,11 @@
 #define DEBUG_STATE FALSE
 #define READ_BATTERY_CHARGE FALSE
 #define SEND_CAN_MSG FALSE
+#define CRUISE_ON FALSE
 
 #define FORWARD 0
+
+#define CRUISE_AGGRESSION 0.25		//The current to use when in cruise control
 
 union {
 	float float_var;
@@ -32,15 +36,23 @@ union {
 	uint8_t chars[4];
 } v;
 
+union {
+	float float_var;
+	uint8_t chars[4];
+} s;
+
 CAN_msg_t CAN_drive;
 
 uint8_t reverse_toggle = 0;
 uint8_t old_reverse_toggle = 0;
 
+
+
 /**
  * When called it updates the CAN_drive and then sends the CAN_drive to the motor controller
  * Takes Current (0.000 - 1.000) you want the car to be at, and Velocity(any number in m/s) you want the car to be at
  * Note: NEVER pass in a negative velocity, the forwards and backwards is taken care of with the switch on the dashboard and this function.
+ * @params desired current, desired velocity
  */
 void sendMotorCommand(float curr, float vel)
 {
@@ -121,6 +133,10 @@ int main(void)
 	GPIOC->CRL &= ~(0xF << 24); //C6
 	GPIOC->CRL |= (0x4 << 24); //C6
 
+	//Setup cruise control
+	GPIOA->CRH &= ~(0xF << 8);
+	GPIOA->CRH |= (0x4 << 8);
+	
 	//CAN receive setup
 	CAN_msg_t CAN_rx_msg;
 	
@@ -138,6 +154,12 @@ int main(void)
 	
 	uint8_t battery_percent = 0x00;
 	uint8_t regen_toggle = 0x00;
+	
+	uint8_t cruise_enable = 0x00;
+	uint8_t cruise_button_state = 0x00;
+	uint8_t cruise_button_previous = 0x00;
+	float target_speed = 0;
+	
 
 	while(1) 	
 	{
@@ -146,6 +168,14 @@ int main(void)
 		regen_reading = (ReadADC() >> 6) << 6;
 		regen_toggle = ((GPIOC->IDR >> 8) & 0x1);
 		reverse_toggle = ((GPIOC->IDR >> 6) & 0x1);
+		cruise_button_state = ((GPIOA->IDR >> 10) & 0x1);
+		
+		#if DEBUG_STATE
+			SendString(" Cruise status: ");
+			if(cruise_enable == 1) {SendString("on");}
+			if(cruise_enable != 1) {SendString("off");}
+		#endif
+		
 		
 		if(CANMsgAvail())
 		{
@@ -159,6 +189,21 @@ int main(void)
                     battery_percent = 70;
                 #endif
 			}
+			
+			//Reads battery speed
+			if(CAN_rx_msg.id == MC_BASE + 3)
+			{
+				s.chars[0] = CAN_rx_msg.data[4];
+				s.chars[1] = CAN_rx_msg.data[5];
+				s.chars[2] = CAN_rx_msg.data[6];
+				s.chars[3] = CAN_rx_msg.data[7];
+				#if DEBUG_STATE
+					SendString( Motor Velocity: );
+					SendInt(s.float_var);
+				#endif
+				
+			}
+			
 		}
 
 		if(reverse_toggle != old_reverse_toggle)
@@ -166,6 +211,12 @@ int main(void)
 			sendReverseToggle();
 		}
 
+		if(cruise_button_state != cruise_button_previous & cruise_button_previous == 0)
+		{
+			cruise_enable = !cruise_enable;
+			target_speed = s.float_var;
+		}
+		
         #if DEBUG_STATE
             //SendString(" rgn tgl: ");
             //SendInt(regen_toggle);
@@ -227,6 +278,7 @@ int main(void)
 
 				//sends knob percentage and velocity
 				sendMotorCommand((float) regen_reading/ADC_MAX, 0.000);
+				cruise_enable = 0;
 
 			}
             //The encoder reading has changed, or no regen is applied at the moment, send a new drive message
@@ -264,6 +316,27 @@ int main(void)
 		//If a timeout occured, send the previously sent CAN drive message
 		if(timeoutFlag == TRUE)
 		{	
+			
+			#if CRUISE_ON
+				if(cruise_enable == 1)
+				{
+					u.float_var = CRUISE_AGGRESSION;
+					v.float_var = target_speed;
+					
+					//Set current
+					CAN_drive.data[4] = u.chars[0];
+					CAN_drive.data[5] = u.chars[1];
+					CAN_drive.data[6] = u.chars[2];
+					CAN_drive.data[7] = u.chars[3];
+	
+					//set velocity
+					CAN_drive.data[0] = v.chars[0];
+					CAN_drive.data[1] = v.chars[1];
+					CAN_drive.data[2] = v.chars[2];
+					CAN_drive.data[3] = v.chars[3];
+				}	
+			#endif
+			
             #if DEBUG_STATE
                 SendString(" ,timout ");
             #endif
@@ -279,6 +352,8 @@ int main(void)
 		old_regen_reading = regen_reading;
 		old_encoder_reading = encoder_reading;
 		old_reverse_toggle = reverse_toggle;
+		cruise_button_previous = cruise_button_state;
+
 		
 		#if DEBUG_STATE
 			SendLine();	
