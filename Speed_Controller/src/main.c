@@ -57,7 +57,7 @@ void sendMotorCommand(float curr, float vel)
 	u.float_var = curr;
 	
 	#if DEBUG_STATE
-		SendString(" Direction: ");
+		SendString(" ,Direction: ");
 		if(v.float_var > 0) { SendString("Forwards"); }
 		if(v.float_var < 0) { SendString("Backwards"); }
 	#endif
@@ -94,10 +94,7 @@ void sendReverseToggle() {
 	CAN_drive.data[3] = v.chars[3];
 
 	#if DEBUG_STATE
-		SendString("Toggle reverse, vel= ");
-		SendInt(v.float_var);
-		SendString("Direction: ");
-		SendInt(reverse_toggle);
+		SendString(" ,Toggle reverse");
 	#endif
 	
 	#if SEND_CAN_MSG
