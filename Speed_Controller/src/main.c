@@ -18,7 +18,9 @@
 
 #define DEBUG_STATE FALSE
 #define READ_BATTERY_CHARGE FALSE
-#define SEND_CAN_MSG TRUE
+#define SEND_CAN_MSG FALSE
+
+#define FORWARD 0
 
 union {
 	float float_var;
@@ -44,8 +46,21 @@ void sendMotorCommand(float curr, float vel)
 {
 	
 	//Set velocity based on input and the reverse toggle, and also sets the current from the input
-	v.float_var = reverse_toggle = 1 ? -vel : vel;
+	if(reverse_toggle == FORWARD) 
+	{
+		v.float_var = vel;
+	} else
+	{
+		v.float_var = -(vel);
+	}
+	
 	u.float_var = curr;
+	
+	#if DEBUG_STATE
+		SendString(" Direction: ");
+		if(v.float_var > 0) { SendString("Forwards"); }
+		if(v.float_var < 0) { SendString("Backwards"); }
+	#endif
 	
 	//Set current
 	CAN_drive.data[4] = u.chars[0];
@@ -78,6 +93,13 @@ void sendReverseToggle() {
 	CAN_drive.data[2] = v.chars[2];
 	CAN_drive.data[3] = v.chars[3];
 
+	#if DEBUG_STATE
+		SendString("Toggle reverse, vel= ");
+		SendInt(v.float_var);
+		SendString("Direction: ");
+		SendInt(reverse_toggle);
+	#endif
+	
 	#if SEND_CAN_MSG
 	    CANSend(&CAN_drive);
     #endif
@@ -260,8 +282,10 @@ int main(void)
 		old_regen_reading = regen_reading;
 		old_encoder_reading = encoder_reading;
 		old_reverse_toggle = reverse_toggle;
-
-        SendLine();		
+		
+		#if DEBUG_STATE
+			SendLine();	
+		#endif
 		
 	}
 	
