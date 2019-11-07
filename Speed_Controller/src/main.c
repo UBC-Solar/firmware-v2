@@ -136,6 +136,10 @@ int main(void)
 	GPIOA->CRH &= ~(0xF << 8);
 	GPIOA->CRH |= (0x4 << 8);
 	
+	//Setup brake input
+	GPIOC->CRL &= ~(0xF << 20); //C5
+	GPIOC->CRL |= (0x4 << 20); //C5
+	
 	//CAN receive setup
 	CAN_msg_t CAN_rx_msg;
 	
