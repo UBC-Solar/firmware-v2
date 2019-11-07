@@ -46,8 +46,6 @@ CAN_msg_t CAN_drive;
 uint8_t reverse_toggle = 0;
 uint8_t old_reverse_toggle = 0;
 
-
-
 /**
  * When called it updates the CAN_drive and then sends the CAN_drive to the motor controller
  * Takes Current (0.000 - 1.000) you want the car to be at, and Velocity(any number in m/s) you want the car to be at
@@ -130,6 +128,7 @@ int main(void)
 	GPIOC->CRH &= ~(0xF); //Reset C8
 	GPIOC->CRH |= (0x4); //Enable C8 as Input
 	
+	//Setup reverse toggle
 	GPIOC->CRL &= ~(0xF << 24); //C6
 	GPIOC->CRL |= (0x4 << 24); //C6
 
@@ -160,6 +159,9 @@ int main(void)
 	uint8_t cruise_button_previous = 0x00;
 	float target_speed = 0;
 	
+	uint8_t brake_on = 0; 
+	
+	
 
 	while(1) 	
 	{
@@ -169,6 +171,12 @@ int main(void)
 		regen_toggle = ((GPIOC->IDR >> 8) & 0x1);
 		reverse_toggle = ((GPIOC->IDR >> 6) & 0x1);
 		cruise_button_state = ((GPIOA->IDR >> 10) & 0x1);
+		brake_on = ((GPIOC->IDR >> 5) & 0x1); //PC5
+		
+		#if DEBUG_STATE
+			SendString(" Brake On: ");
+			SendInt(brake_on);
+		#endif
 		
 		#if DEBUG_STATE
 			SendString(" Cruise status: ");
@@ -215,6 +223,10 @@ int main(void)
 		{
 			cruise_enable = !cruise_enable;
 			target_speed = s.float_var;
+		}
+		
+		if(brake_on) {
+			cruise_enable = 0;
 		}
 		
         #if DEBUG_STATE
