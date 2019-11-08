@@ -210,8 +210,8 @@ int main(void)
 				s.chars[2] = CAN_rx_msg.data[6];
 				s.chars[3] = CAN_rx_msg.data[7];
 				#if DEBUG_STATE
-					SendString( Motor Velocity: );
-					SendInt(s.float_var);
+					SendString( Motor Velocity (float * 100): );
+					SendInt(s.float_var * 100);
 				#endif
 				
 			}
