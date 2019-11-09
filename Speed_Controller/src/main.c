@@ -17,14 +17,15 @@
 #define TRUE 1
 #define FALSE 0
 
-#define DEBUG_STATE FALSE
+#define DEBUG_STATE TRUE
 #define READ_BATTERY_CHARGE FALSE
 #define SEND_CAN_MSG FALSE
-#define CRUISE_ON FALSE
+#define CRUISE_ON TRUE
 
 #define FORWARD 0
 
 #define CRUISE_AGGRESSION 0.25		//The current to use when in cruise control
+#define CRUISE_CHANGE_SPEED (1 / 3.6) //1 km/h change per click
 
 union {
 	float float_var;
@@ -68,7 +69,7 @@ void sendMotorCommand(float curr, float vel)
 	
 	#if DEBUG_STATE
 		SendString(" ,Direction: ");
-		if(v.float_var > 0) { SendString("Forwards"); }
+		if(v.float_var >= 0) { SendString("Forwards"); }
 		if(v.float_var < 0) { SendString("Backwards"); }
 	#endif
 	
@@ -133,8 +134,15 @@ int main(void)
 	GPIOC->CRL |= (0x4 << 24); //C6
 
 	//Setup cruise control
-	GPIOA->CRH &= ~(0xF << 8);
-	GPIOA->CRH |= (0x4 << 8);
+	GPIOA->CRH &= ~(0xF << 8); //Cruise LED
+	GPIOA->CRH |= (0x1 << 8);
+	
+	GPIOA->CRH &= ~(0xF << 12); //Cruise Down
+	GPIOA->CRH |= (0x4 << 12);
+	
+	GPIOA->CRH &= ~(0xF << 16); //Cruise Up
+	GPIOA->CRH |= (0x4 << 16);
+
 	
 	//Setup brake input
 	GPIOC->CRL &= ~(0xF << 20); //C5
@@ -159,35 +167,33 @@ int main(void)
 	uint8_t regen_toggle = 0x00;
 	
 	uint8_t cruise_enable = 0x00;
-	uint8_t cruise_button_state = 0x00;
-	uint8_t cruise_button_previous = 0x00;
+	uint8_t cruise_button_up_state = 0x00;
+	uint8_t cruise_button_up_previous = 0x00;
+	uint8_t cruise_button_down_state = 0x00;
+	uint8_t cruise_button_down_previous = 0x00;
 	float target_speed = 0;
 	
 	uint8_t brake_on = 0; 
-	
-	
 
 	while(1) 	
 	{
 		//Gets all new values
 		encoder_reading = EncoderRead();
+		
 		regen_reading = (ReadADC() >> 6) << 6;
 		regen_toggle = ((GPIOC->IDR >> 8) & 0x1);
+		
 		reverse_toggle = ((GPIOC->IDR >> 6) & 0x1);
-		cruise_button_state = ((GPIOA->IDR >> 10) & 0x1);
+		
+		cruise_button_up_state = ((GPIOA->IDR >> 12) & 0x1);
+		cruise_button_down_state = ((GPIOA->IDR >> 11) & 0x1);
+
 		brake_on = ((GPIOC->IDR >> 5) & 0x1); //PC5
 		
 		#if DEBUG_STATE
 			SendString(" Brake On: ");
 			SendInt(brake_on);
 		#endif
-		
-		#if DEBUG_STATE
-			SendString(" Cruise status: ");
-			if(cruise_enable == 1) {SendString("on");}
-			if(cruise_enable != 1) {SendString("off");}
-		#endif
-		
 		
 		if(CANMsgAvail())
 		{
@@ -210,8 +216,8 @@ int main(void)
 				s.chars[2] = CAN_rx_msg.data[6];
 				s.chars[3] = CAN_rx_msg.data[7];
 				#if DEBUG_STATE
-					SendString( Motor Velocity (float * 100): );
-					SendInt(s.float_var * 100);
+					SendString("Motor Velocity (m/s): ");
+					SendInt(s.float_var);
 				#endif
 				
 			}
@@ -223,15 +229,43 @@ int main(void)
 			sendReverseToggle();
 		}
 
-		if(cruise_button_state != cruise_button_previous & cruise_button_previous == 0)
+		if( (cruise_button_up_state != cruise_button_up_previous) && cruise_button_up_previous == 1)
 		{
-			cruise_enable = !cruise_enable;
-			target_speed = s.float_var;
+			if(cruise_enable)
+			{
+				target_speed += CRUISE_CHANGE_SPEED;
+			} else {
+				cruise_enable = 1;
+				target_speed = s.float_var;
+			}
+		}
+		if( (cruise_button_down_state != cruise_button_up_previous) && cruise_button_down_previous == 1)
+			{
+			if(cruise_enable)
+			{
+				target_speed -= CRUISE_CHANGE_SPEED;
+			} else {
+				cruise_enable = 1;
+				target_speed = s.float_var;
+			}
+		}
+			
+		if(cruise_enable) {
+			GPIOA->BSRR |= (0x1 << 10); 
+		} else {
+			GPIOA->BSRR &= ~(0x1 << 10);
 		}
 		
+		//THIS IS NOT ON THE CAR YET
 		if(brake_on) {
-			cruise_enable = 0;
+			//cruise_enable = 0;
 		}
+		
+		#if DEBUG_STATE
+			SendString(" Cruise status: ");
+			if(cruise_enable == 1) {SendString("on");}
+			if(cruise_enable != 1) {SendString("off");}
+		#endif
 		
         #if DEBUG_STATE
             //SendString(" rgn tgl: ");
@@ -350,6 +384,14 @@ int main(void)
 					CAN_drive.data[1] = v.chars[1];
 					CAN_drive.data[2] = v.chars[2];
 					CAN_drive.data[3] = v.chars[3];
+					
+					#if DEBUG_STATE
+						SendString(" Cruise send Curr: ");
+						SendInt(u.float_var * 100);
+						SendString(" Vel: ");
+						SendInt(v.float_var);
+					#endif
+					
 				}	
 			#endif
 			
@@ -368,7 +410,9 @@ int main(void)
 		old_regen_reading = regen_reading;
 		old_encoder_reading = encoder_reading;
 		old_reverse_toggle = reverse_toggle;
-		cruise_button_previous = cruise_button_state;
+		cruise_button_up_previous = cruise_button_up_state;
+		cruise_button_down_previous = cruise_button_down_state;
+
 
 		
 		#if DEBUG_STATE
