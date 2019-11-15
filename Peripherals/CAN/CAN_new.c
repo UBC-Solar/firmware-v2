@@ -2,24 +2,21 @@
 
 // CAN Interface configuration -------------------------------------------------
 
-#define  CAN_RX_ENABLE          1
 #define  CAN_RX_MAILBOX_SIZE    4
-#define  CAN_TX_ENABLE          1
-#define  CAN_TX_MAX_THREADS     1
 #define  CAN_TX_MAILBOX_SIZE    4
+#define  CAN_TX_MAX_THREADS     1
 
 #define  CAN_CONTROLLER         1       // CAN Controller number (Use 1 or 2)
 #define  CAN_LOOPBACK           1       // 0 = no loopback (normal), 1 = loopback (tx linked to rx)
-#define  CAN_BITRATE_NOMINAL    125000  // Nominal bitrate (bit/s)
+#define  CAN_BITRATE_NOMINAL    500000  // Nominal bitrate (bit/s)
 
 //------------------------------------------------------------------------------
-
+// defines the pointer to the access struct of the CAN driver
 #define _CAN_Driver_(n)         Driver_CAN##n
 #define  CAN_Driver_(n)        _CAN_Driver_(n)
 extern   ARM_DRIVER_CAN         CAN_Driver_(CAN_CONTROLLER);
 #define  ptrCAN               (&CAN_Driver_(CAN_CONTROLLER))
 
-#if CAN_RX_ENABLE
 // Receiver object to intilize driver
 uint32_t                        rx_obj_idx = 0xFFFFFFFFU;
 ARM_CAN_MSG_INFO                rx_msg_info;
@@ -27,9 +24,7 @@ ARM_CAN_MSG_INFO                rx_msg_info;
 // Mailbox for non-blocking operaiton 
 osMailQDef(CAN_RXMailbox, CAN_RX_MAILBOX_SIZE, CAN_Message);
 osMailQId CAN_RXMailbox_id; 
-#endif //CAN_RX_ENABLE
 
-#if CAN_TX_ENABLE
 // Transmission object to intilize driver
 uint32_t                        tx_obj_idx = 0xFFFFFFFFU;
 ARM_CAN_MSG_INFO                tx_msg_info;
@@ -43,7 +38,6 @@ void CAN_TXThread(void const *argument);
 
 osThreadDef(CAN_TXThread, osPriorityAboveNormal, CAN_TX_MAX_THREADS, 0);
 osThreadId CAN_TXThread_id;
-#endif //CAN_TX_ENABLE
 
 
 enum CAN_Error
@@ -77,7 +71,7 @@ enum CAN_Error
  * @Param error: error message corresponding with fail 
  * @Returns: nothing 
  */
-void Error_Handler(enum CAN_Error error)
+static void Error_Handler(enum CAN_Error error)
 {
 	switch (error)
 	{
@@ -187,7 +181,7 @@ void CAN_SignalObjectEvent(uint32_t obj_idx, uint32_t event)
 			break; 
 		
 		case ARM_CAN_EVENT_RECEIVE:
-#if CAN_RX_ENABLE
+		{
 			if (obj_idx == rx_obj_idx)
 			{
 				// This will not wait for slot to free up as it runs in ISR
@@ -207,8 +201,8 @@ void CAN_SignalObjectEvent(uint32_t obj_idx, uint32_t event)
 					Error_Handler(RX_MESSAGE_QUEUE_FAIL);
 				}
 			}
-#endif //CAN_RX_ENABLE
-			break; 
+		}
+		break; 
 		
 		case ARM_CAN_EVENT_RECEIVE_OVERRUN: 
 			break; 
@@ -230,18 +224,14 @@ void CAN_Initialize(void)
 	uint32_t                 clock; 
 	int32_t                  status;
 	
-#if CAN_RX_ENABLE 
 	CAN_RXMailbox_id = osMailCreate(osMailQ(CAN_RXMailbox), NULL);
 	if (!CAN_RXMailbox_id) Error_Handler(RX_MAILBOX_CREATE_FAIL);
-#endif //CAN_RX_ENABLE
 
-#if CAN_TX_ENABLE
 	CAN_TXMailbox_id = osMailCreate(osMailQ(CAN_TXMailbox), NULL);
 	if (!CAN_TXMailbox_id) Error_Handler(TX_MAILBOX_CREATE_FAIL); 
 	
 	CAN_TXThread_id = osThreadCreate(osThread(CAN_TXThread), NULL);
 	if (!CAN_TXThread_id) Error_Handler(TX_THREAD_CREATE_FAIL);
-#endif //CAN_TX_ENABLE
 	
 	can_cap = ptrCAN->GetCapabilities();                                          // Get CAN driver capabilities
 	num_objects = can_cap.num_objects;                                            // Number of receive/transmit objects
@@ -295,35 +285,27 @@ void CAN_Initialize(void)
 	{                                                                             // Find first available object for receive and transmit
 		can_obj_cap = ptrCAN->ObjectGetCapabilities(count);                         // Get object capabilities
 		
-#if CAN_RX_ENABLE
 		if ((rx_obj_idx == 0xFFFFFFFFU) && (can_obj_cap.rx == 1U))
 		{ 
 			rx_obj_idx = count;
 		}
-#endif //CAN_RX_ENABLE
 		
-#if CAN_TX_ENABLE
 		else if ((tx_obj_idx == 0xFFFFFFFFU) && (can_obj_cap.tx == 1U))
 		{ 
 			tx_obj_idx = count;
 			break;
 		}
-#endif //CAN_TX_ENABLE
 	}
 	
-#if CAN_RX_ENABLE
 	// Configure receive object
 	if (rx_obj_idx == 0xFFFFFFFFU) Error_Handler(RX_UNSUPPORTED_FAIL);
 	status = ptrCAN->ObjectConfigure(rx_obj_idx, ARM_CAN_OBJ_RX);
 	if (status != ARM_DRIVER_OK) Error_Handler(OBJECT_CONFIG_FAIL);
-#endif //CAN_RX_ENABLE
 	
-#if CAN_TX_ENABLE
 	// Configure transmit object
 	if (tx_obj_idx == 0xFFFFFFFFU) Error_Handler(TX_UNSUPPORTED_FAIL);; 
 	status = ptrCAN->ObjectConfigure(tx_obj_idx, ARM_CAN_OBJ_TX);
 	if (status != ARM_DRIVER_OK) Error_Handler(OBJECT_CONFIG_FAIL);
-#endif //CAN_TX_ENABLE
 	
 #if CAN_LOOPBACK
 	// Loopback mode used for testing
@@ -338,33 +320,32 @@ void CAN_Initialize(void)
 }
 
 /**
- * Allows messages with specified filter to be received 
+ * Allows messages with specified filter to be received
+ * Filter set will be a 11-bit standard ID filter 
  * @Param allowed_id: message id to allow through filter 
  * @Returns: nothing
  */
 void CAN_SetFilter(uint32_t allowed_id)
 {
-#if CAN_RX_ENABLE
-	if (ptrCAN->ObjectSetFilter(rx_obj_idx, ARM_CAN_FILTER_ID_EXACT_ADD, ARM_CAN_EXTENDED_ID(allowed_id), 0) != ARM_DRIVER_OK)
+	// Uses Standard 11-bit ID to match with the old CAN driver, can change in future if necessary
+	if (ptrCAN->ObjectSetFilter(rx_obj_idx, ARM_CAN_FILTER_ID_EXACT_ADD, ARM_CAN_STANDARD_ID(allowed_id), 0) != ARM_DRIVER_OK)
 	{
 		Error_Handler(FILTER_SET_FAIL);
 	}
-#endif //CAN_RX_ENABLE
 }
 
 /** 
  * Allows messages with any the specified filters to be received
+ * Filters set will be 11-bit standard ID filters
  * @Param allowed_ids: message ids to allow through filter
  * @Returns: nothing
  */
 void CAN_SetFilters(uint32_t* allowed_ids, uint8_t length)
 {
-#if CAN_RX_ENABLE
 	for (uint8_t i = 0; i < length; ++i)
 	{
 		CAN_SetFilter(allowed_ids[i]);
 	}
-#endif //CAN_RX_ENABLE
 }
 
 /**
@@ -377,7 +358,6 @@ void CAN_SetFilters(uint32_t* allowed_ids, uint8_t length)
 void CAN_PerformOnMessage(void (*fp)(CAN_Message* msg))
 {
 	osEvent      evt;
-	osStatus     result; 
 	CAN_Message* msg_rx;
 	
 	evt = osMailGet(CAN_RXMailbox_id, osWaitForever);
@@ -385,7 +365,7 @@ void CAN_PerformOnMessage(void (*fp)(CAN_Message* msg))
 	{
 		msg_rx = (CAN_Message*)evt.value.p;
 		fp(msg_rx);
-		result = osMailFree(CAN_RXMailbox_id, msg_rx);
+		osMailFree(CAN_RXMailbox_id, msg_rx);
 	}
 }
 
@@ -439,7 +419,6 @@ void CAN_QueueMessage(CAN_Message* msg_tx)
  * @TODO: implement message retries and mailbox timeouts 
  * 
  */
-#if CAN_TX_ENABLE
 void CAN_TXThread(void const *argument)
 {
 	osEvent      evt;
@@ -456,5 +435,4 @@ void CAN_TXThread(void const *argument)
 		}
   }
 }
-#endif //CAN_TX_ENABLE
 
