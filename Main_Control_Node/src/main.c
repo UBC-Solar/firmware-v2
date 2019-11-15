@@ -8,10 +8,6 @@
 #define TRUE 1
 #define FALSE 0
 
-#define MC_BASE 0x200
-#define BATT_BASE 0x620
-#define ARR_BASE 0x700
-
 CAN_msg_t CAN_rx_msg;
 
 union {
@@ -49,8 +45,6 @@ int main(void)
 	//uint8_t c = 0;
 	//uint8_t d = 0;
 	
-	CAN_Message msg; 
-	
 	osKernelInitialize();
 	
 	//InitialiseLCDPins();
@@ -64,19 +58,7 @@ int main(void)
 	
 	osKernelStart();
 	
-	
 
-  for (int i = 0; i < 8; ++i) {
-		msg.data[i] = 12;
-	}
-	msg.id = 100; 
-	msg.len = 8; 
-	while (1)
-	{
-		CAN_QueueMessage(&msg);
-		CAN_PerformOnMessage(testerbester);
-		osDelay(1000);
-	}
 	
 	
 	
