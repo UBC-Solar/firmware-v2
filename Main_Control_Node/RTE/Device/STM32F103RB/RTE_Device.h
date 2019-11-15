@@ -1382,7 +1382,7 @@
 #define RTE_CAN1                        1
 
 //   <o> CAN1_RX Pin <0=>PA11 <1=>PB8 <2=>PD0
-#define RTE_CAN1_RX_PORT_ID             0
+#define RTE_CAN1_RX_PORT_ID             1
 #if    (RTE_CAN1_RX_PORT_ID == 0)
 #define RTE_CAN1_RX_PORT                GPIOA
 #define RTE_CAN1_RX_BIT                 11
@@ -1397,7 +1397,7 @@
 #endif
 
 //   <o> CAN1_TX Pin <0=>PA12 <1=>PB9 <2=>PD1
-#define RTE_CAN1_TX_PORT_ID             0
+#define RTE_CAN1_TX_PORT_ID             1
 #if    (RTE_CAN1_TX_PORT_ID == 0)
 #define RTE_CAN1_TX_PORT                GPIOA
 #define RTE_CAN1_TX_BIT                 12

@@ -48,7 +48,9 @@ int main(void)
 	//CAN_msg_t newCanMsg;
 	//uint8_t c = 0;
 	//uint8_t d = 0;
-	//CAN_Message msg; 
+	
+	CAN_Message msg; 
+	
 	osKernelInitialize();
 	
 	//InitialiseLCDPins();
@@ -56,14 +58,28 @@ int main(void)
 	//ScreenSetup();
 	//InitLEDs();
 	VirtualComInit();
-	XBeeInit();
-	//CAN_Initialize();
+	//XBeeInit();
+	CAN_Initialize();
+	CAN_SetFilter(100);
+	
 	osKernelStart();
 	
+	
+
+  for (int i = 0; i < 8; ++i) {
+		msg.data[i] = 12;
+	}
+	msg.id = 100; 
+	msg.len = 8; 
 	while (1)
 	{
+		CAN_QueueMessage(&msg);
 		CAN_PerformOnMessage(testerbester);
+		osDelay(1000);
 	}
+	
+	
+	
 #if 0
 	while(1)
 	{

@@ -61,6 +61,8 @@ enum CAN_Error
 	TX_SEND_FAIL,
 	LOOPBACK_UNSUPPORTED_FAIL, 
 	LOOPBACK_SET_FAIL,
+	UNKNOWN_SIGNAL_UNIT_EVENT,
+	UNKNOWN_SIGNAL_OBJECT_EVENT,
 	UNKNOWN
 };
 
@@ -113,6 +115,10 @@ static void Error_Handler(enum CAN_Error error)
 			while (1) ;
 		case LOOPBACK_SET_FAIL:
 			while (1) ;
+		case UNKNOWN_SIGNAL_UNIT_EVENT:
+			while (1) ;
+		case UNKNOWN_SIGNAL_OBJECT_EVENT:
+			while (1) ;
 		case UNKNOWN:
 			while (1) ;
 		default: 
@@ -153,7 +159,7 @@ void CAN_SignalUnitEvent(uint32_t event)
 			break;
 		
 		default: 
-			Error_Handler(UNKNOWN);
+			Error_Handler(UNKNOWN_SIGNAL_UNIT_EVENT);
   }
 }
 
@@ -208,7 +214,7 @@ void CAN_SignalObjectEvent(uint32_t obj_idx, uint32_t event)
 			break; 
 		
 		default: 
-			Error_Handler(UNKNOWN);
+			Error_Handler(UNKNOWN_SIGNAL_OBJECT_EVENT);
 	}
 }
 
@@ -380,7 +386,7 @@ void CAN_SendMessage(CAN_Message* msg_tx)
 {
 	// Set message send parameters here in tx_msg_info struct
 	memset(&tx_msg_info, 0U, sizeof(ARM_CAN_MSG_INFO));
-	tx_msg_info.id = ARM_CAN_EXTENDED_ID(msg_tx->id);
+	tx_msg_info.id = ARM_CAN_STANDARD_ID(msg_tx->id);
 	if (ptrCAN->MessageSend(tx_obj_idx, &tx_msg_info, msg_tx->data, msg_tx->len) != msg_tx->len)
 	{
 		Error_Handler(TX_SEND_FAIL);
