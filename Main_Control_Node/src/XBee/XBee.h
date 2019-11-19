@@ -1,6 +1,6 @@
 #include "stm32f10x.h"
 #include "cmsis_os.h"
-#include "CAN.h"
+#include "CAN_new.h"
 
 #define CAN_MSG_SIZE (uint8_t) 17;
 #define CAN_DATA_SIZE 8;
@@ -13,12 +13,12 @@ osStatus XBeeInit(void);
  * Queues up CAN message for transmission when free 
  * Passes: An instance of the can_msg_t data type
  */
-osStatus XBeeQueueCan(CAN_msg_t* msg_tx);
+osStatus XBeeQueueCan(CAN_Message* msg_tx);
 /**
  * Transmits a CAN message via the previously initialized STM32 UART
  * Passes: An instance of the can_msg_t data type
  */
-void XBeeTransmitCan(CAN_msg_t* can_tx_msg);
+void XBeeTransmitCan(CAN_Message* msg_tx);
 /**
  * Outputs a character in 2 bytes according to its ASCII value
  * For example, 'A' is referenced in ASCII as 0x41, so 4 and 1 are sent

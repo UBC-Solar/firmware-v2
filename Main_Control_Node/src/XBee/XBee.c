@@ -6,7 +6,7 @@
 
 void XBeeThread(void const *argument);
 
-osMailQDef(XBeeMailBox, XBEE_MAIL_BOX_MAX_SIZE, CAN_msg_t);
+osMailQDef(XBeeMailBox, XBEE_MAIL_BOX_MAX_SIZE, CAN_Message);
 osMailQId XBeeMailBoxID; 
 
 osThreadDef(XBeeThread, osPriorityAboveNormal, XBEE_MAX_THREADS, 0);
@@ -47,11 +47,11 @@ osStatus XBeeInit(void)
  * Queues up CAN message for transmission when free 
  * Passes: An instance of the can_msg_t data type
  */
-osStatus XBeeQueueCan(CAN_msg_t* msg_tx)
+osStatus XBeeQueueCan(CAN_Message* msg_tx)
 {
 	// allocate mail slot 
-	CAN_msg_t* msg_copy; 
-	msg_copy = (CAN_msg_t*)osMailAlloc(XBeeMailBoxID, osWaitForever);
+	CAN_Message* msg_copy; 
+	msg_copy = (CAN_Message*) osMailAlloc(XBeeMailBoxID, osWaitForever);
 	if (!msg_copy) return osErrorOS;
 	
 	// copy over contents of message
@@ -70,7 +70,7 @@ osStatus XBeeQueueCan(CAN_msg_t* msg_tx)
  * Transmits a CAN message via the previously initialized STM32 UART
  * Passes: An instance of the can_msg_t data type
  */
-void XBeeTransmitCan(CAN_msg_t* msg_tx)
+void XBeeTransmitCan(CAN_Message* msg_tx)
 {
 	//Timestamp: 4 bytes
 	uint8_t time[2];
@@ -154,14 +154,14 @@ void XBeeSendByte(char c)
 void XBeeThread(void const *argument)
 {
   osEvent evt; 
-	CAN_msg_t* msg_tx;
+	CAN_Message* msg_tx;
 	
   while (1)
 	{
 		evt = osMailGet(XBeeMailBoxID, osWaitForever);
 		if (evt.status == osEventMail)
 		{
-			msg_tx = (CAN_msg_t*)evt.value.p;
+			msg_tx = (CAN_Message*) evt.value.p;
 			XBeeTransmitCan(msg_tx);
 		}
 		osMailFree(XBeeMailBoxID, msg_tx);

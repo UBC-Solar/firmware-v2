@@ -17,10 +17,10 @@
  *   | Temperature | float    | C     | 1000        |
  *   ------------------------------------------------
  */
-#define CAN_FILTER_MOTOR_BASE                        0x00000200
-#define CAN_FILTER_MOTOR_CURRENT_OFFSET              0x00000002
-#define CAN_FILTER_MOTOR_SPEED_OFFSET                0x00000003
-#define CAN_FILTER_MOTOR_TEMPERATURE_OFFSET          0x00000011
+#define CAN_ID_MOTOR_BASE                        0x00000200
+#define CAN_ID_MOTOR_CURRENT_OFFSET              0x00000002
+#define CAN_ID_MOTOR_SPEED_OFFSET                0x00000003
+#define CAN_ID_MOTOR_TEMPERATURE_OFFSET          0x00000011
 
 /*
  * List of CAN filters for battery controller 
@@ -41,13 +41,13 @@
  *   | Temperature | int8_t   | C     | 1000        |
  *   ------------------------------------------------
  */
-#define CAN_FILTER_BATTERY_BASE                      0x00000620
-#define CAN_FILTER_BATTERY_ERROR_OFFSET              0x00000002
-#define CAN_FILTER_BATTERY_VOLTAGE_OFFSET            0x00000003
-#define CAN_FILTER_BATTERY_CURRENT_OFFSET            0x00000004
-#define CAN_FILTER_BATTERY_CHARGE_OFFSET             0x00000006
-#define CAN_FILTER_BATTERY_TEMPERATURE_OFFSET        0x00000007
+#define CAN_ID_BATTERY_BASE                      0x00000620
+#define CAN_ID_BATTERY_ERROR_OFFSET              0x00000002
+#define CAN_ID_BATTERY_VOLTAGE_OFFSET            0x00000003
+#define CAN_ID_BATTERY_CURRENT_OFFSET            0x00000004
+#define CAN_ID_BATTERY_CHARGE_OFFSET             0x00000006
+#define CAN_ID_BATTERY_TEMPERATURE_OFFSET        0x00000007
 
-#define CAN_FILTER_ARRAY_BASE                        0x00000700
+#define CAN_ID_ARRAY_BASE                        0x00000700
 
 #endif //CAN_COMMON_H
