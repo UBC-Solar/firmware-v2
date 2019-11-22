@@ -10,6 +10,17 @@
 #define  MOTOR_SPEED_TRANSMIT_QUANTA    5
 #define  MOTOR_CURRENT_TRANSMIT_QUANTA  5
 
+static uint32_t allowed_ids[] = {
+	CAN_ID_MOTOR_BASE + CAN_ID_MOTOR_CURRENT_OFFSET,
+	CAN_ID_MOTOR_BASE + CAN_ID_MOTOR_SPEED_OFFSET,
+	CAN_ID_MOTOR_BASE + CAN_ID_MOTOR_TEMPERATURE_OFFSET,
+	CAN_ID_BATTERY_BASE + CAN_ID_BATTERY_ERROR_OFFSET,
+	CAN_ID_BATTERY_BASE + CAN_ID_BATTERY_VOLTAGE_OFFSET,
+	CAN_ID_BATTERY_BASE + CAN_ID_BATTERY_CURRENT_OFFSET, 
+	CAN_ID_BATTERY_BASE + CAN_ID_BATTERY_CHARGE_OFFSET,
+	CAN_ID_BATTERY_BASE + CAN_ID_BATTERY_TEMPERATURE_OFFSET
+};
+
 union Mem_Space_4_Byte {
 	float     to_float;
 	uint8_t   to_uint8_t_array[4];
@@ -223,24 +234,31 @@ static void CAN_Message_Handler(CAN_Message* CAN_msg_p)
 			XBeeQueueCan(CAN_msg_p);
 			break;
 		}
+		
+		default:
+		{
+			break; 
+		}
+		
 	}
 }
 
+
 int main(void)
 {
+	
 	osKernelInitialize();
 	
-	//InitialiseLCDPins();
-	//CANInit(CAN_1000KBPS);
-	//ScreenSetup();
-	//InitLEDs();
+	InitialiseLCDPins();
+	ScreenSetup();
+	InitLEDs();
 	VirtualComInit();
-	//XBeeInit();
+	XBeeInit();
 	CAN_Initialize();
-	CAN_SetFilter(100);
+	CAN_SetFilters(allowed_ids, sizeof(allowed_ids)/sizeof(*allowed_ids));
 	
 	osKernelStart();
-
+	
 	while (1)
 	{
 		CAN_PerformOnMessage(CAN_Message_Handler);

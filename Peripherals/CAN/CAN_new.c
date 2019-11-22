@@ -7,7 +7,7 @@
 #define  CAN_TX_MAX_THREADS     1
 
 #define  CAN_CONTROLLER         1       // CAN Controller number (Use 1 or 2)
-#define  CAN_LOOPBACK           1       // 0 = no loopback (normal), 1 = loopback (tx linked to rx)
+#define  CAN_LOOPBACK           0       // 0 = no loopback (normal), 1 = loopback (tx linked to rx)
 #define  CAN_BITRATE_NOMINAL    500000  // Nominal bitrate (bit/s)
 
 //------------------------------------------------------------------------------
