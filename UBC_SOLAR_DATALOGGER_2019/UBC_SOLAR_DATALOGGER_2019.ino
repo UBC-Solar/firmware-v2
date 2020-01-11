@@ -9,9 +9,8 @@ SdFat sd;
 unsigned long millisecs;
 void setup () 
 {
-  //pinMode(A0, INPUT_PULLUP); //Button Pin
- // pinMode(7, OUTPUT); //LED Pin
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(A0, INPUT_PULLUP); //Button Pin
+  pinMode(LED_BUILTIN, OUTPUT); //LED pin
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
