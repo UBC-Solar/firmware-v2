@@ -5,3 +5,5 @@
 !*.uvprojx
 !*.ino
 !*.gitignore
+
+!*/
