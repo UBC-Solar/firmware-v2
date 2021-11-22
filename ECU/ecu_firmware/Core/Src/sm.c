@@ -50,6 +50,7 @@ static void sm_State7Handler(void);
 static void sm_State8Handler(void);
 static void sm_State9Handler(void);
 static void sm_State10Handler(void);
+static void sm_FltCheck(void);
 //-------------------------------------------
 // Local Function Implementations
 //-------------------------------------------
@@ -62,7 +63,7 @@ static void sm_State1Handler(void)
 {
 	HAL_GPIO_WritePin(GPIOB, FLT_OUT_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOB, SUPP_LOW_Pin, GPIO_PIN_SET);
-	HAL_Delay(SM_STATE_DELAY_TIME);
+//	HAL_Delay(SM_STATE_DELAY_TIME);
 }
 
 //
@@ -72,7 +73,7 @@ static void sm_State2Handler(void)
 {
 	HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOB, NEG_OUT_Pin, GPIO_PIN_SET);
-	HAL_Delay(SM_STATE_DELAY_TIME);
+//	HAL_Delay(SM_STATE_DELAY_TIME);
 }
 
 
@@ -82,7 +83,7 @@ static void sm_State2Handler(void)
 static void sm_State3Handler(void)
 {
 	HAL_GPIO_WritePin(GPIOB, DCDC_OUT_Pin, GPIO_PIN_SET);
-	HAL_Delay(SM_STATE_DELAY_TIME);
+//	HAL_Delay(SM_STATE_DELAY_TIME);
 }
 
 //
@@ -91,7 +92,7 @@ static void sm_State3Handler(void)
 static void sm_State4Handler(void)
 {
 	HAL_GPIO_WritePin(GPIOB, SWAP_OUT_Pin, GPIO_PIN_SET);
-	HAL_Delay(SM_STATE_DELAY_TIME);
+//	HAL_Delay(SM_STATE_DELAY_TIME);
 }
 
 //
@@ -101,7 +102,7 @@ static void sm_State5Handler(void)
 {
 	HAL_GPIO_WritePin(GPIOA, FAN_OUT1_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOB, FAN_OUT2_Pin, GPIO_PIN_SET);
-	HAL_Delay(SM_STATE_DELAY_TIME);
+//	HAL_Delay(SM_STATE_DELAY_TIME);
 }
 
 //
@@ -110,7 +111,7 @@ static void sm_State5Handler(void)
 static void sm_State6Handler(void)
 {
 	HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_SET);
-	HAL_Delay(SM_STATE_DELAY_TIME);
+//	HAL_Delay(SM_STATE_DELAY_TIME);
 }
 
 //
@@ -121,7 +122,7 @@ static void sm_State7Handler(void)
 	HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOB, FLT_OUT_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOB, SUPP_LOW_Pin, GPIO_PIN_RESET);
-	HAL_Delay(SM_STATE_DELAY_TIME);
+//	HAL_Delay(SM_STATE_DELAY_TIME);
 }
 
 //
@@ -130,7 +131,7 @@ static void sm_State7Handler(void)
 static void sm_State8Handler(void)
 {
 	HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_SET);
-	HAL_Delay(SM_STATE_DELAY_TIME);
+//	HAL_Delay(SM_STATE_DELAY_TIME);
 }
 
 //
@@ -138,7 +139,8 @@ static void sm_State8Handler(void)
 //
 static void sm_State9Handler(void)
 {
-	HAL_Delay(SM_STATE_DELAY_TIME);
+//	HAL_Delay(SM_STATE_DELAY_TIME);
+	for(;;);
 }
 
 //
@@ -156,9 +158,9 @@ static void sm_State10Handler(void)
 	for(;;)
 	{
 		HAL_GPIO_WritePin(GPIOB, FLT_OUT_Pin, GPIO_PIN_SET);
-		HAL_Delay(SM_STATE_DELAY_TIME);
+		//HAL_Delay(SM_STATE_DELAY_TIME);
 		HAL_GPIO_WritePin(GPIOB, FLT_OUT_Pin, GPIO_PIN_RESET);
-		HAL_Delay(SM_STATE_DELAY_TIME);
+		//HAL_Delay(SM_STATE_DELAY_TIME);
 	}
 }
 
@@ -173,20 +175,6 @@ static void sm_FltCheck(void)
 	{
 		stateVal = (uint8_t)SM_eState10;
 	}
-}
-
-//
-// state updating function: increments until state 9 and stays there unless fault occurs
-//
-static void sm_UpdateStateNum(void)
-{
-	stateVal++;
-
-	if (stateVal > SM_eState9)
-	{
-		stateVal = SM_eState9;
-	}
-
 }
 
 
@@ -207,4 +195,15 @@ void SM_Init(void)
 	sm_pfaStateHandler[SM_eState8] = &sm_State8Handler;
 	sm_pfaStateHandler[SM_eState9] = &sm_State9Handler;
 	sm_pfaStateHandler[SM_eState10] = &sm_State10Handler;
+}
+
+void SM_Update(void)
+{
+	sm_pfaStateHandler[stateVal]();
+	stateVal++;
+	if (stateVal > SM_eState9)
+	{
+		stateVal = SM_eState9;
+	}
+	sm_FltCheck();
 }

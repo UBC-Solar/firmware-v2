@@ -66,10 +66,8 @@ void Error_Handler(void);
 #define HLIM_OUT_GPIO_Port GPIOA
 #define HLIM_IN_Pin GPIO_PIN_5
 #define HLIM_IN_GPIO_Port GPIOA
-#define HLIM_IN_EXTI_IRQn EXTI9_5_IRQn
 #define LLIM_IN_Pin GPIO_PIN_6
 #define LLIM_IN_GPIO_Port GPIOA
-#define LLIM_IN_EXTI_IRQn EXTI9_5_IRQn
 #define FLT_IN_Pin GPIO_PIN_7
 #define FLT_IN_GPIO_Port GPIOA
 #define FAN_OUT2_Pin GPIO_PIN_12
