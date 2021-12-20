@@ -34,7 +34,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TIM_DEBOUNCE_COUNTER_MAX 				(2u)
+#define TIM2_DEBOUNCE_TIME_MS 				(50u)
+#define TIM2_PERIOD_TIME_MS 				(50u)
+#define PC_FLAG_SET							(1u)
+#define PC_FLAG_RESET						(0u)
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -45,11 +49,33 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
+//
+// Digital input debounce states
+//
+typedef enum digin_eDebounceState
+{
+	digin_MaybeDown = 0u,
+	digin_Down,
+	digin_MaybeUp,
+	digin_Up,
+}digin_eDebounceState;
+
+static volatile digin_eDebounceState diginLLIMState = digin_MaybeDown;
+static volatile digin_eDebounceState diginLLIMNextState = digin_MaybeDown;
+static volatile uint8_t diginLLIMDebounceTim = 0u;
+
+static volatile digin_eDebounceState diginHLIMState = digin_MaybeDown;
+static volatile digin_eDebounceState diginHLIMNextState = digin_MaybeDown;
+static volatile uint8_t diginHLIMDebounceTim = 0u;
+
+static volatile uint8_t pcFlag = PC_FLAG_RESET;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN PFP */
-
+static uint8_t digin_LLIMIsHigh(void);
+static uint8_t digin_HLIMIsHigh(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -223,54 +249,176 @@ void ADC1_2_IRQHandler(void)
   */
 void TIM2_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM2_IRQn 0 */
-  GPIO_PinState hlimSt = HAL_GPIO_ReadPin(GPIOA, HLIM_IN_Pin);
-  GPIO_PinState llimSt = HAL_GPIO_ReadPin(GPIOA, LLIM_IN_Pin);
-
-  if(TIM_DEBOUNCE_COUNTER_MAX >= itDbCounter)
+ /* USER CODE BEGIN TIM2_IRQn 0 */
+  diginLLIMState = diginLLIMNextState;
+  switch(diginLLIMState)
   {
-	  if(GPIO_PIN_SET == hlimSt || GPIO_PIN_SET == llimSt)
+	  case digin_MaybeDown:
+		  if(digin_LLIMIsHigh())
+		  {
+			  diginLLIMNextState = digin_MaybeUp;
+		  }
+		  else
+		  {
+			  if(diginLLIMDebounceTim < TIM2_DEBOUNCE_TIME_MS)
+			  {
+				  diginLLIMDebounceTim += TIM2_PERIOD_TIME_MS;
+				  diginLLIMNextState = digin_MaybeDown;
+			  }
+			  else
+			  {
+				  diginLLIMDebounceTim = 0u;
+				  diginLLIMNextState = digin_Down;
+			  }
+		  }
+		  break;
+
+	  case digin_Down:
+		  if(digin_LLIMIsHigh())
+		  {
+			  diginLLIMNextState = digin_MaybeUp;
+		  }
+		  else
+		  {
+			  diginLLIMNextState = digin_Down;
+			  if(pcFlag == PC_FLAG_SET)
+			  {
+				  pcFlag = PC_FLAG_RESET;
+				  SM_SetStatusFlag(SM_STATUS_LLIM_HIGH_FLAG);
+			  }
+		  }
+		  break;
+
+
+	  case digin_MaybeUp:
+		  if(digin_LLIMIsHigh())
+		  {
+			  if(diginLLIMDebounceTim < TIM2_DEBOUNCE_TIME_MS)
+			  {
+				  diginLLIMDebounceTim += TIM2_PERIOD_TIME_MS;
+				  diginLLIMNextState = digin_MaybeUp;
+			  }
+			  else
+			  {
+				  diginLLIMDebounceTim = 0u;
+				  diginLLIMNextState = digin_Up;
+			  }
+		  }
+		  else
+		  {
+			  diginLLIMNextState = digin_MaybeDown;
+		  }
+		  break;
+
+	  case digin_Up:
+		  if(digin_LLIMIsHigh())
+		  {
+			  diginLLIMNextState = digin_Up;
+			  pcFlag = PC_FLAG_SET;
+
+		  }
+		  else
+		  {
+			  diginLLIMNextState = digin_MaybeDown;
+		  }
+		  break;
+
+	  default:
+		  /* Do Nothing */
+		  break;
+
+  }
+
+  diginHLIMState = diginHLIMNextState;
+
+  switch(diginHLIMState)
+  {
+  case digin_MaybeDown:
+	  if(digin_HLIMIsHigh())
 	  {
-		  itDbCounter++;
+		  diginHLIMNextState = digin_MaybeUp;
 	  }
 	  else
 	  {
-		  itDbCounter = 0u;
+		  if(diginHLIMDebounceTim < TIM2_DEBOUNCE_TIME_MS)
+		  {
+			  diginHLIMDebounceTim += TIM2_PERIOD_TIME_MS;
+			  diginHLIMNextState = digin_MaybeDown;
+		  }
+		  else
+		  {
+			  diginHLIMDebounceTim = 0u;
+			  diginHLIMNextState = digin_Down;
+		  }
 	  }
-  }
-  else
-  {
-	  if(GPIO_PIN_SET == hlimSt)
+	  break;
+
+  case digin_Down:
+	  if(digin_HLIMIsHigh())
 	  {
-		  SM_SetStatusFlag(SM_STATUS_HLIM_HIGH_FLAG);
+		  diginHLIMNextState = digin_MaybeUp;
+	  }
+	  else
+	  {
+		  diginHLIMNextState = digin_Down;
+		  HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_SET);
+	  }
+	  break;
+
+  case digin_MaybeUp:
+	  if(digin_HLIMIsHigh())
+	  {
+		  if(diginHLIMDebounceTim < TIM2_DEBOUNCE_TIME_MS)
+		  {
+			  diginHLIMDebounceTim += TIM2_PERIOD_TIME_MS;
+			  diginHLIMNextState = digin_MaybeUp;
+		  }
+		  else
+		  {
+			  diginHLIMDebounceTim = 0u;
+			  diginHLIMNextState = digin_Up;
+		  }
+	  }
+	  else
+	  {
+		  diginHLIMNextState = digin_MaybeDown;
+	  }
+	  break;
+
+  case digin_Up:
+	  if(digin_HLIMIsHigh())
+	  {
+		  diginHLIMNextState = digin_Up;
 		  HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_RESET);
 	  }
 	  else
 	  {
-		  HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_SET);
-		  SM_ClearStatusFlag(SM_STATUS_HLIM_HIGH_FLAG);
+		  diginHLIMNextState = digin_MaybeDown;
 	  }
+	  break;
 
-	  if(GPIO_PIN_SET == llimSt)
-	  {
-		  SM_SetStatusFlag(SM_STATUS_LLIM_HIGH_FLAG);
-	  }
-	  else
-	  {
-		  SM_ClearStatusFlag(SM_STATUS_LLIM_HIGH_FLAG);
-	  }
+  default:
+	  /* Do Nothing */
+	  break;
 
-	  itDbCounter = 0u;
   }
 
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
-
   /* USER CODE END TIM2_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
 
+static uint8_t digin_LLIMIsHigh(void)
+{
+	return (GPIO_PIN_SET == HAL_GPIO_ReadPin(GPIOA, LLIM_IN_Pin));
+}
+
+static uint8_t digin_HLIMIsHigh(void)
+{
+	return (GPIO_PIN_SET == HAL_GPIO_ReadPin(GPIOA, HLIM_IN_Pin));
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

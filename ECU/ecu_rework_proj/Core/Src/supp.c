@@ -21,7 +21,7 @@
 //-------------------------------------------
 #define SUPP_RAW_READING_BUFFER_LENGTH       (16u)
 #define SUPP_GET_NEXT_IND(x)				 ((x+1u)%SUPP_RAW_READING_BUFFER_LENGTH)
-#define SUPP_ADC_MAX_VAL					 (4095)
+#define SUPP_ADC_MAX_VAL					 ((1u << 12u) - 1u)
 #define SUPP_FLOAT_TO_UINT_ROUND(x)			 ((uint16_t)(x+0.5f))
 #define SUPP_BUFFER_FIRST_INDEX				 (0u)
 #define SUPP_BUFFER_LAST_INDEX				 (SUPP_RAW_READING_BUFFER_LENGTH - 1u)
@@ -114,8 +114,8 @@ void SUPP_UpdateAdcFilter(uint16_t adcVal)
 	//output rounding to int
 	supp_filteredOut = SUPP_FLOAT_TO_UINT_ROUND(supp_fFilteredOut);
 
-	//adc value upbounding
-	if(SUPP_ADC_MAX_VAL > supp_filteredOut)
+	//adc value clamping
+	if(SUPP_ADC_MAX_VAL < supp_filteredOut)
 	{
 		supp_filteredOut = SUPP_ADC_MAX_VAL;
 	}

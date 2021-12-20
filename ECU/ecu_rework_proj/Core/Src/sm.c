@@ -178,14 +178,17 @@ static void sm_State9Handler(void)
 //
 static void sm_State10Handler(void)
 {
-	HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_RESET);
-	HAL_Delay(SM_PC_DELAY_TIME_1);
-	HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_SET);
-	HAL_Delay(SM_PC_DELAY_TIME_1);
-	HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_SET);
-	HAL_Delay(SM_PC_DELAY_TIME_2);
-	HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_RESET);
-
+	if (sm_IsStatusFlagged(SM_STATUS_LLIM_HIGH_FLAG))
+	{
+		HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_RESET);
+		HAL_Delay(SM_PC_DELAY_TIME_1);
+		HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_SET);
+		HAL_Delay(SM_PC_DELAY_TIME_1);
+		HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_SET);
+		HAL_Delay(SM_PC_DELAY_TIME_2);
+		HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_RESET);
+		SM_ClearStatusFlag(SM_STATUS_LLIM_HIGH_FLAG);
+	}
 }
 
 //
@@ -193,21 +196,24 @@ static void sm_State10Handler(void)
 //
 static void sm_State11Handler(void)
 {
-	__disable_irq();
-	HAL_GPIO_WritePin(GPIOB, SWAP_OUT_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOB, NEG_OUT_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOB, DCDC_OUT_Pin, GPIO_PIN_RESET);
-
-	//toggle fault indicator led
-	for(;;)
+	if(sm_IsStatusFlagged(SM_STATUS_FLT_FLAG))
 	{
-		HAL_GPIO_WritePin(GPIOB, FLT_OUT_Pin, GPIO_PIN_SET);
-		HAL_Delay(SM_STATE_DELAY_TIME);
-		HAL_GPIO_WritePin(GPIOB, FLT_OUT_Pin, GPIO_PIN_RESET);
-		HAL_Delay(SM_STATE_DELAY_TIME);
+		__disable_irq();
+		HAL_GPIO_WritePin(GPIOB, SWAP_OUT_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, NEG_OUT_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOB, DCDC_OUT_Pin, GPIO_PIN_RESET);
+
+		//toggle fault indicator led
+		for(;;)
+		{
+			HAL_GPIO_WritePin(GPIOB, FLT_OUT_Pin, GPIO_PIN_SET);
+			HAL_Delay(SM_STATE_DELAY_TIME);
+			HAL_GPIO_WritePin(GPIOB, FLT_OUT_Pin, GPIO_PIN_RESET);
+			HAL_Delay(SM_STATE_DELAY_TIME);
+		}
 	}
 }
 
@@ -216,26 +222,44 @@ static void sm_State11Handler(void)
 //
 static void sm_FltCheck(void)
 {
-	static uint8_t faultCounter = 0u;
+	static uint8_t faultCounter1 = 0u;
+	static uint8_t faultCounter2 = 0u;
 	GPIO_PinState st1 = HAL_GPIO_ReadPin(GPIOA, FLT_IN_Pin);
 	GPIO_PinState st2 =	HAL_GPIO_ReadPin(GPIOB, ESTOP_IN_Pin);
 
 	//something's wrong when estop_in or flt_in is pulled to gnd
-	if (st1 == GPIO_PIN_RESET || st2 == GPIO_PIN_RESET)
+	if (st1 == GPIO_PIN_RESET)
 	{
 		//do some de-bouncing, give it three chances
-		if(faultCounter >= SM_FLT_MAX_COUNTER_VAL)
+		if(faultCounter1 >= SM_FLT_MAX_COUNTER_VAL)
 		{
 			SM_SetStatusFlag(SM_STATUS_FLT_FLAG);
 		}
 		else
 		{
-			faultCounter++;
+			faultCounter1++;
 		}
 	}
 	else
 	{
-		faultCounter = 0u;
+		faultCounter1 = 0u;
+	}
+
+	if (st2 == GPIO_PIN_RESET)
+	{
+		//do some de-bouncing, give it three chances
+		if(faultCounter2 >= SM_FLT_MAX_COUNTER_VAL)
+		{
+			SM_SetStatusFlag(SM_STATUS_FLT_FLAG);
+		}
+		else
+		{
+			faultCounter2++;
+		}
+	}
+	else
+	{
+		faultCounter2 = 0u;
 	}
 }
 
@@ -276,33 +300,19 @@ void SM_Init(void)
 //
 void SM_Update(void)
 {
-	//function pointer array for storing the routines
+
+	//calling from function pointer array
 	(void)sm_pfaStateHandler[sm_stateVal]();
+	//fault checking
+	sm_FltCheck();
 	sm_stateVal++;
 
-	//hold the state to state 9, or come back from state 10 to state 9
-	//in normal scenario (without fault or llim_in = high), stay in state 9
-	if (SM_eState9 == sm_stateVal || SM_eState10 == sm_stateVal)
+	//keep calling state handlers 9, 10, and 11
+	if (SM_eStateMaxNum <= sm_stateVal)
 	{
 		sm_stateVal = SM_eState9;
 	}
 
-	//if there is fault, move to state 11
-	if(sm_IsStatusFlagged(SM_STATUS_FLT_FLAG))
-	{
-		sm_stateVal = SM_eState11;
-	}
-	//if llim_in goes up high, move to state 10
-	else if (sm_IsStatusFlagged(SM_STATUS_LLIM_HIGH_FLAG))
-	{
-		sm_stateVal = SM_eState10;
-	}
-	else
-	{
-		//Do nothing
-	}
-
-	sm_FltCheck();
 }
 
 void SM_SetStatusFlag(uint8_t flag)
