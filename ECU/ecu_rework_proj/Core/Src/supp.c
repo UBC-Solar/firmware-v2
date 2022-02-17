@@ -104,7 +104,7 @@ void SUPP_UpdateAdcFilter(uint16_t adcVal)
 	//	}
 	//	else
 	//	{
-	//		supp_bufferSumIndex = SUPP_BUFFER_LAST_INDEX;
+	//		supp_bufferSumIndex = SUPP_BUFFER_LAS T_INDEX;
 	//	}
 	//	supp_fFilteredOut += supp_filterTaps[index] * supp_aAdcVal[supp_bufferSumIndex];
 	//}

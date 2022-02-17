@@ -101,11 +101,11 @@ int main(void)
   MX_TIM3_Init();
   MX_CAN_Init();
   MX_TIM2_Init();
+  HAL_CAN_Start(&hcan);
   /* USER CODE BEGIN 2 */
   __disable_irq();
   SM_Init();
   SUPP_InitAndStart();
-  HAL_CAN_Start(&hcan);
   __enable_irq();
   /* USER CODE END 2 */
 

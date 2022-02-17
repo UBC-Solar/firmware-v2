@@ -1,0 +1,23 @@
+              Expected observations
+state 1       flt_out ajd supp_low indication set
+state 2       pc_out and neg_out set
+state 3       dcdc set
+state 4       swap
+state 5       fan running
+state 6       llim closed
+state 7       close pc, flt, spp_low
+state 8       hlim closed
+
+comm: obeserve can message
+
+
+llim fault: reaction to pulling up and then pulling down
+		HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_RESET);
+		HAL_Delay(SM_PC_DELAY_TIME_1);
+		HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_SET);
+		HAL_Delay(SM_PC_DELAY_TIME_1);
+		HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_SET);
+		HAL_Delay(SM_PC_DELAY_TIME_2);
+		HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_RESET);
+
+hlim fault: write 0 when input 1, write 1 when input 0

@@ -281,11 +281,9 @@ void TIM2_IRQHandler(void)
 		  else
 		  {
 			  diginLLIMNextState = digin_Down;
-			  if(pcFlag == PC_FLAG_SET)
-			  {
-				  pcFlag = PC_FLAG_RESET;
-				  SM_SetStatusFlag(SM_STATUS_LLIM_HIGH_FLAG);
-			  }
+			  pcFlag = PC_FLAG_SET;
+			  HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_RESET);
+			  HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_RESET);
 		  }
 		  break;
 
@@ -314,7 +312,11 @@ void TIM2_IRQHandler(void)
 		  if(digin_LLIMIsHigh())
 		  {
 			  diginLLIMNextState = digin_Up;
-			  pcFlag = PC_FLAG_SET;
+			  if(pcFlag == PC_FLAG_SET)
+			  {
+				  pcFlag = PC_FLAG_RESET;
+				  SM_SetStatusFlag(SM_STATUS_LLIM_HIGH_FLAG);
+			  }
 
 		  }
 		  else
@@ -361,7 +363,7 @@ void TIM2_IRQHandler(void)
 	  else
 	  {
 		  diginHLIMNextState = digin_Down;
-		  HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_SET);
+		  HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_RESET);
 	  }
 	  break;
 
@@ -389,7 +391,7 @@ void TIM2_IRQHandler(void)
 	  if(digin_HLIMIsHigh())
 	  {
 		  diginHLIMNextState = digin_Up;
-		  HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_RESET);
+		  HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_SET);
 	  }
 	  else
 	  {

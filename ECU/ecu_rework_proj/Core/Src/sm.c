@@ -23,8 +23,9 @@
 // Constant Definitions & Macros
 //-------------------------------------------
 
+#define SM_CAN_PERIOD               (1000u)
 #define SM_STATE_DELAY_TIME			(1000u)
-#define SM_FLT_MAX_COUNTER_VAL		(3u)
+#define SM_FLT_MAX_COUNTER_VAL		(20u)
 #define SM_PC_DELAY_TIME_1          (4500u)
 #define SM_PC_DELAY_TIME_2          (500u)
 #define SM_ADCVAL_LOWER_MASK		((uint16_t)0xff)
@@ -171,6 +172,7 @@ static void sm_State9Handler(void)
 	aTxData[0u] =  reading & SM_ADCVAL_LOWER_MASK;
 	aTxData[1u] =  (reading & SM_ADCVAL_UPPER_MASK) >> SM_ADCVAL_SHIFT_VAL;
 	HAL_CAN_AddTxMessage(&hcan, &zTxHeader, aTxData, &txMailBox);
+	HAL_Delay(SM_CAN_PERIOD);
 }
 
 //
@@ -180,14 +182,14 @@ static void sm_State10Handler(void)
 {
 	if (sm_IsStatusFlagged(SM_STATUS_LLIM_HIGH_FLAG))
 	{
-		HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_RESET);
-		HAL_Delay(SM_PC_DELAY_TIME_1);
+		NVIC_DisableIRQ(TIM2_IRQn);
 		HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_SET);
 		HAL_Delay(SM_PC_DELAY_TIME_1);
 		HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_SET);
 		HAL_Delay(SM_PC_DELAY_TIME_2);
 		HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_RESET);
 		SM_ClearStatusFlag(SM_STATUS_LLIM_HIGH_FLAG);
+		NVIC_EnableIRQ(TIM2_IRQn);
 	}
 }
 
@@ -228,7 +230,7 @@ static void sm_FltCheck(void)
 	GPIO_PinState st2 =	HAL_GPIO_ReadPin(GPIOB, ESTOP_IN_Pin);
 
 	//something's wrong when estop_in or flt_in is pulled to gnd
-	if (st1 == GPIO_PIN_RESET)
+	if (st1 == GPIO_PIN_SET)
 	{
 		//do some de-bouncing, give it three chances
 		if(faultCounter1 >= SM_FLT_MAX_COUNTER_VAL)
@@ -245,7 +247,7 @@ static void sm_FltCheck(void)
 		faultCounter1 = 0u;
 	}
 
-	if (st2 == GPIO_PIN_RESET)
+	if (st2 == GPIO_PIN_SET)
 	{
 		//do some de-bouncing, give it three chances
 		if(faultCounter2 >= SM_FLT_MAX_COUNTER_VAL)
