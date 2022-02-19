@@ -5,13 +5,13 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 S_SRCS += \
-../Core/Startup/startup_stm32f103c6tx.s 
+../Core/Startup/startup_stm32f103c8tx.s 
 
 OBJS += \
-./Core/Startup/startup_stm32f103c6tx.o 
+./Core/Startup/startup_stm32f103c8tx.o 
 
 S_DEPS += \
-./Core/Startup/startup_stm32f103c6tx.d 
+./Core/Startup/startup_stm32f103c8tx.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
