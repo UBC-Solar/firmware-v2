@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - 'Speed_Controller/**'
+      - 'Peripherals/**'
       - '.github/workflows/speed_controller.yml'
 
   # Allow running this workflow manually from the Actions tab
