@@ -11,7 +11,6 @@
  *
  * If required, this implementation could be changed to interrupt-based, 
  * with a transmitting/receiving queue and hardware control.
- *
  */
 
 #ifndef VIRTUAL_COM_H
@@ -19,31 +18,18 @@
 
 #include "stm32f103xb.h"
 
-/**
- * Sends ASCII character through USART. 
- *
- * @Param c: transmitted character
- */
+typedef enum {
+	BAUD_9600   = 0,
+	BAUD_19200  = 1,
+	BAUD_57600  = 2,
+	BAUD_115200	= 3	// CAUTION: probably works but clock division isn't bang on - has 0.15% error
+} BaudRate_t;
+
+void VirtualComInit(BaudRate_t baud);
 void SendChar(char c);
-
-/**
- * Sends string through USART.
- *
- * @Param str: transmitted string
- */
- void SendString(char* c);
- 
-/**
- * Sends 32-bit unsigned integer through USART (with padded zeros)
- * Number will be represented in hexadecimal.
- * 
- * @Param i: transmitted 32-bit unsigned integer
- */
+void SendString(char* c);
 void SendInt(uint32_t i);
-
-/**
- * Sends a new line through USART
- */
 void SendLine(void);
+void SendCR(void);
 
 #endif /* VIRTUAL_COM_H */
