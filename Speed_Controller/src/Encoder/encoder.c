@@ -27,7 +27,7 @@ void EncoderInit(void)
 	// Enable capture/compare channels 1 and 2, other channels disabled and all polarities default
 	TIM1->CCER = (TIM_CCER_CC2E | TIM_CCER_CC1E);
 
-	TIM1->SMCR |= 0x11 << TIM_SMCR_SMS_Pos; // Set timer to encoder mode 3 (clocked by both TI1FP1 and TI2FP2)
+	TIM1->SMCR |= 0x3 << TIM_SMCR_SMS_Pos; // Set timer to encoder mode 3 (clocked by both TI1FP1 and TI2FP2)
 
 	TIM1->CR1 |= TIM_CR1_CEN; // Enable timer
 }
