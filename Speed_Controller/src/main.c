@@ -1,10 +1,11 @@
-#include "stm32f10x.h"
+#include "stm32f103xb.h"
 
+#include "clock_init/clock_init.h"
 #include "ADC/ADC.h"
 #include "Encoder/encoder.h"
+#include "Timer/Timer.h"
 #include "CAN.h"
 #include "virtual_com.h"
-#include "Timer/Timer.h"
 
 #define DRIVE_CONTROL_ID 0x400
 #define BATTERY_FULL_MSG 0x622
@@ -18,7 +19,7 @@
 
 #define DEBUG_STATE FALSE
 #define READ_BATTERY_CHARGE FALSE
-#define SEND_CAN_MSG FALSE
+#define SEND_CAN_MSG TRUE
 
 #define FORWARD 0
 

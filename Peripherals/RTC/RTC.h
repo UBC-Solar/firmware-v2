@@ -1,4 +1,7 @@
-#include "stm32f10x.h"
+#ifndef RTC_H
+#define RTC_H
+
+#include "stm32f103xb.h"
 
 #define RTC_PRESCALAR 2184 
 
@@ -6,3 +9,5 @@
 		using a prescalar value defined as a constant RTC_PRESCALAR.
 **/
 void RTCinit(void);
+
+#endif /* RTC_H */

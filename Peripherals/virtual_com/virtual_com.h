@@ -14,14 +14,10 @@
  *
  */
 
-#include "stm32f10x.h"
+#ifndef VIRTUAL_COM_H
+#define VIRTUAL_COM_H
 
-#ifndef VIRTUAL_COM
-#define VIRTUAL_COM
-/**
- * Initializes virtual com.
- */
-void VirtualComInit(void);
+#include "stm32f103xb.h"
 
 /**
  * Sends ASCII character through USART. 
@@ -49,4 +45,5 @@ void SendInt(uint32_t i);
  * Sends a new line through USART
  */
 void SendLine(void);
-#endif
+
+#endif /* VIRTUAL_COM_H */

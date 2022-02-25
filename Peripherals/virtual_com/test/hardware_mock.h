@@ -1,7 +1,7 @@
 /**
  * Header file for the mock class.
  */
-#include "stm32f10x.h"
+#include "stm32f103xb.h"
 #include <queue>
 #include <ctime>
 

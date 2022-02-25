@@ -1,8 +1,7 @@
-#include "stm32f10x.h"
+#ifndef TIMER_H
+#define TIMER_H
 
-#define TIM2_PRESCALER 7199
-#define TRUE 1
-#define FALSE 0
+#include "stm32f103xb.h"
 
 /** Interrupt handler for Timer 2.
  */
@@ -23,4 +22,4 @@ void RestartTimer(void);
  */
 void StopTimer(void);
 
-extern int8_t timeoutFlag;
+#endif /* TIMER_H */
