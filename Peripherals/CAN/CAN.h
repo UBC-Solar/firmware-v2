@@ -43,18 +43,16 @@ typedef struct
 
 typedef struct
 {
-	uint8_t TS2;
-	uint8_t TS1;
-	uint8_t BRP;
+	uint8_t TS2; // Time segment 1
+	uint8_t TS1; // Time segment 2
+	uint8_t BRP; // Baud rate prescaler
 } CAN_bit_timing_config_t;
-
-extern const CAN_bit_timing_config_t can_configs[6];
 
 void CANInit(enum BITRATE bitrate);
 void CANReceive(CAN_msg_t *CAN_rx_msg);
 void CANSend(CAN_msg_t *CAN_tx_msg);
-void CANSetFilter(uint16_t id);
-void CANSetFilters(uint16_t *ids, uint8_t num);
+int CANSetFilter(uint16_t id);
+int CANSetFilters(uint16_t *ids, uint8_t num);
 uint8_t CANMsgAvail(void);
 
 #endif /* CAN_H */
