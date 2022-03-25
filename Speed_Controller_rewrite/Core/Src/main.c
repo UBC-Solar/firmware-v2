@@ -60,7 +60,7 @@ static void MX_TIM1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
-void Send_Motor_Command(float current, float velocity);
+void SendMotorCommand(float current, float velocity);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -69,45 +69,45 @@ void Send_Motor_Command(float current, float velocity);
 static union {
   float f;
   uint8_t b[4];
-} velocity_union;
+} velocity_setpoint;
 
 static union {
   float f;
   uint8_t b[4];
-} current_union;
+} current_setpoint;
 
-CAN_TxHeaderTypeDef pdata = {
+const CAN_TxHeaderTypeDef speedCommandCanHeader = {
   0x0400,         // CAN ID
-  0x0000,         // Extended CAN ID unused
+  0x0000,         // Extended CAN ID - unused
   CAN_ID_STD,     // Frame Identifier - Standard ID
   CAN_RTR_DATA,   // Frame type - Data
   8,              // Data length
   DISABLE         // Timestamp 
 };
 
-/*
- * @brief Sends a CAN message to the motor controller with desired params
+/**
+ * Sends a CAN message to the motor controller with desired params
  *
- * @params float current - current percentage from 0-1
- * @params float velocity - target velocity in m/s 
+ * @param current current percentage from 0-1
+ * @param velocity target velocity in m/s
  */
-void Send_Motor_Command(float current, float velocity) {
+void SendMotorCommand(float current, float velocity) {
   velocity_union.f = velocity;
   current_union.f = current;
   uint32_t mailbox;
   uint8_t data[8];
 
-  data[0] = velocity_union.b[0];
-  data[1] = velocity_union.b[1];
-  data[2] = velocity_union.b[2];
-  data[3] = velocity_union.b[3];
+  data[0] = velocity_setpoint.b[0];
+  data[1] = velocity_setpoint.b[1];
+  data[2] = velocity_setpoint.b[2];
+  data[3] = velocity_setpoint.b[3];
 
-  data[4] = current_union.b[0];
-  data[5] = current_union.b[1];
-  data[6] = current_union.b[2];
-  data[7] = current_union.b[3];
+  data[4] = current_setpoint.b[0];
+  data[5] = current_setpoint.b[1];
+  data[6] = current_setpoint.b[2];
+  data[7] = current_setpoint.b[3];
 
-  HAL_CAN_AddTxMessage(&hcan, &pdata, data, &mailbox);
+  HAL_CAN_AddTxMessage(&hcan, &speedCommandCanHeader, data, &mailbox);
 }
 
 /* USER CODE END 0 */
