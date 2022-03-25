@@ -17,7 +17,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define PRINT_DEBUG FALSE
+#define PRINT_DEBUG TRUE
 #define READ_BATTERY_CHARGE FALSE
 #define SEND_CAN_MSG TRUE
 
@@ -27,13 +27,13 @@ static union
 {
 	float float_var;
 	uint8_t byte[4];
-} u;
+} current_setpoint;
 
 static union
 {
 	float float_var;
 	uint8_t byte[4];
-} v;
+} velocity_setpoint;
 
 static CAN_msg_t CAN_drive;
 
@@ -251,38 +251,38 @@ static void sendMotorCommand(float curr, float vel)
 	// Set velocity based on input and the reverse toggle, and also sets the current from the input
 	if (reverse_toggle == FORWARD)
 	{
-		v.float_var = vel;
+		velocity_setpoint.float_var = vel;
 	}
 	else
 	{
-		v.float_var = -(vel);
+		velocity_setpoint.float_var = -(vel);
 	}
 
-	u.float_var = curr;
+	current_setpoint.float_var = curr;
 
 #if PRINT_DEBUG
 	SendString(", Direction: ");
-	if (v.float_var > 0)
+	if (velocity_setpoint.float_var > 0)
 	{
 		SendString("Forwards");
 	}
-	if (v.float_var < 0)
+	if (velocity_setpoint.float_var < 0)
 	{
 		SendString("Backwards");
 	}
 #endif /* PRINT_DEBUG */
 
-	// Set current
-	CAN_drive.data[4] = u.byte[0];
-	CAN_drive.data[5] = u.byte[1];
-	CAN_drive.data[6] = u.byte[2];
-	CAN_drive.data[7] = u.byte[3];
-
 	// set velocity
-	CAN_drive.data[0] = u.byte[0];
-	CAN_drive.data[1] = u.byte[1];
-	CAN_drive.data[2] = u.byte[2];
-	CAN_drive.data[3] = u.byte[3];
+	CAN_drive.data[0] = velocity_setpoint.byte[0];
+	CAN_drive.data[1] = velocity_setpoint.byte[1];
+	CAN_drive.data[2] = velocity_setpoint.byte[2];
+	CAN_drive.data[3] = velocity_setpoint.byte[3];
+
+	// Set current
+	CAN_drive.data[4] = current_setpoint.byte[0];
+	CAN_drive.data[5] = current_setpoint.byte[1];
+	CAN_drive.data[6] = current_setpoint.byte[2];
+	CAN_drive.data[7] = current_setpoint.byte[3];
 
 #if SEND_CAN_MSG
 	CANSend(&CAN_drive);
@@ -297,12 +297,12 @@ static void sendMotorCommand(float curr, float vel)
 static void sendReverseToggle()
 {
 	// Toggles the dirrection of the car, regardless of that direction
-	v.float_var = -(v.float_var);
+	velocity_setpoint.float_var = -(velocity_setpoint.float_var);
 
-	CAN_drive.data[0] = u.byte[0];
-	CAN_drive.data[1] = u.byte[1];
-	CAN_drive.data[2] = u.byte[2];
-	CAN_drive.data[3] = u.byte[3];
+	CAN_drive.data[0] = velocity_setpoint.byte[0];
+	CAN_drive.data[1] = velocity_setpoint.byte[1];
+	CAN_drive.data[2] = velocity_setpoint.byte[2];
+	CAN_drive.data[3] = velocity_setpoint.byte[3];
 
 #if PRINT_DEBUG
 	SendString(", Toggle reverse");
