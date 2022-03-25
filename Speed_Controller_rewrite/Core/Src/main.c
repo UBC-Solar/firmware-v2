@@ -60,7 +60,7 @@ static void MX_TIM1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
-void Send_Motor_Command(float speed, float velocity);
+void Send_Motor_Command(float current, float velocity);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -77,12 +77,12 @@ static union {
 } current_union;
 
 CAN_TxHeaderTypeDef pdata = {
-  0x0400,
-  0x0000,
-  CAN_ID_STD,
-  CAN_RTR_DATA,
-  8,
-  DISABLE
+  0x0400,         // CAN ID
+  0x0000,         // Extended CAN ID unused
+  CAN_ID_STD,     // Frame Identifier - Standard ID
+  CAN_RTR_DATA,   // Frame type - Data
+  8,              // Data length
+  DISABLE         // Timestamp 
 };
 
 /*
