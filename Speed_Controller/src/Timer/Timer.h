@@ -1,26 +1,16 @@
-#include "stm32f10x.h"
+#ifndef TIMER_H
+#define TIMER_H
 
-#define TIM2_PRESCALER 7199
-#define TRUE 1
-#define FALSE 0
+#include "stm32f103xb.h"
 
-/** Interrupt handler for Timer 2.
- */
-void TIM2_IRQHandler(void);
+// Processor speed is 36MHz; set prescaler value for a clock frequency of 10kHz
+#define TIM2_PRESCALER (3600 - 1)
 
-/** Initializes a timer to trigger a timing interrupt periodically
- * @param period: period for triggering the timing interrupt in ms
- */
-void TimerInit(int period);
-
-/**
- * Restarts the counter on the timer
- */
+void TimerInit(unsigned int period);
 void RestartTimer(void);
-
-/**
- * Stops the counter on the timer
- */
 void StopTimer(void);
+uint8_t GetTimeoutFlag(void);
+void ClearTimeoutFlag(void);
+// void TIM2_IRQHandler(void) is defined in this module
 
-extern int8_t timeoutFlag;
+#endif /* TIMER_H */

@@ -2,6 +2,7 @@
 
 !*.c
 !*.h
+!platformio.ini
 !*.uvprojx
 !*.ino
 !*.gitignore

@@ -1,8 +1,10 @@
-#include "stm32f10x.h"
+#ifndef RTC_H
+#define RTC_H
 
-#define RTC_PRESCALAR 2184 
+#include "stm32f103xb.h"
 
-/** Initializes the RTC Clock with the LSE Oscillator on the Nucleo-64 board,
-		using a prescalar value defined as a constant RTC_PRESCALAR.
-**/
+#define RTC_PRESCALAR 2184
+
 void RTCinit(void);
+
+#endif /* RTC_H */
