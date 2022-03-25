@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "debug_io.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -145,8 +145,8 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-
-  HAL_UART_Transmit(&huart2, (uint8_t*) "RESTART!", 8, 3000);
+  DebugIO_Init(&huart2);
+  printf("RESTART!\n\r");
   HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
