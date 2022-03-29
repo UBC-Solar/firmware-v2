@@ -1,5 +1,4 @@
 #include "debug_io.h"
-#include <stdio.h>
 
 // =============================================================================
 // Configuration Parameters
