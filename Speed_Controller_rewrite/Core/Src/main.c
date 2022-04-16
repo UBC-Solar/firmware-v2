@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "debug_io.h"
+#include "data_collect.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,9 +32,24 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ENCODER_MIN 0x0010
-#define ENCODER_MAX 0x0180
-#define ENCODER_OVERFLOW 0x300
+// POT
+#define PEDAL_MIN (0x5FFF * 10)
+#define PEDAL_MAX (0x6B00 * 10)
+
+// PED
+// #define PEDAL_MIN 0x0975
+// #define PEDAL_MAX 0x0A70
+
+#define PEDAL_OVERFLOW (0x7000 * 10)
+
+#define ADC_AVERAGE_SIZE 10
+#define ADC_BUF_SIZE (ADC_AVERAGE_SIZE * 2)
+
+typedef union
+{
+  float f;
+  uint8_t b[4];
+} FloatBytes_t;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -42,10 +58,13 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
+
 CAN_HandleTypeDef hcan;
 
 TIM_HandleTypeDef htim1;
-TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart2;
 
@@ -59,25 +78,16 @@ static void MX_GPIO_Init(void);
 static void MX_CAN_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_TIM2_Init(void);
+static void MX_DMA_Init(void);
+static void MX_ADC1_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
-static void SendMotorCommand(float current, float velocity);
+static void SendMotorCommand(FloatBytes_t currentSetpoint, FloatBytes_t velocitySetpoint);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-static union
-{
-  float f;
-  uint8_t b[4];
-} velocity_setpoint;
-
-static union
-{
-  float f;
-  uint8_t b[4];
-} current_setpoint;
+static volatile uint16_t adcBuf[ADC_BUF_SIZE] = {0};
 
 static CAN_TxHeaderTypeDef speedCommandCanHeader = {
     0x0401,       // CAN ID
@@ -94,22 +104,20 @@ static CAN_TxHeaderTypeDef speedCommandCanHeader = {
  * @param current current percentage from 0-1
  * @param velocity target velocity in m/s
  */
-static void SendMotorCommand(float current, float velocity)
+static void SendMotorCommand(FloatBytes_t currentSetpoint, FloatBytes_t velocitySetpoint)
 {
-  velocity_setpoint.f = velocity;
-  current_setpoint.f = current;
   uint32_t mailbox;
   uint8_t data[8];
 
-  data[0] = velocity_setpoint.b[0];
-  data[1] = velocity_setpoint.b[1];
-  data[2] = velocity_setpoint.b[2];
-  data[3] = velocity_setpoint.b[3];
+  data[0] = velocitySetpoint.b[0];
+  data[1] = velocitySetpoint.b[1];
+  data[2] = velocitySetpoint.b[2];
+  data[3] = velocitySetpoint.b[3];
 
-  data[4] = current_setpoint.b[0];
-  data[5] = current_setpoint.b[1];
-  data[6] = current_setpoint.b[2];
-  data[7] = current_setpoint.b[3];
+  data[4] = currentSetpoint.b[0];
+  data[5] = currentSetpoint.b[1];
+  data[6] = currentSetpoint.b[2];
+  data[7] = currentSetpoint.b[3];
 
   HAL_CAN_AddTxMessage(&hcan, &speedCommandCanHeader, data, &mailbox);
 }
@@ -123,8 +131,9 @@ static void SendMotorCommand(float current, float velocity)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  uint16_t encoder;
-  float targetCurrent;
+  uint32_t pedal;
+  FloatBytes_t currentSetpoint;
+  FloatBytes_t velocitySetpoint;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -148,47 +157,56 @@ int main(void)
   MX_CAN_Init();
   MX_TIM1_Init();
   MX_USART2_UART_Init();
-  MX_TIM2_Init();
+  MX_DMA_Init();
+  MX_ADC1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   DebugIO_Init(&huart2);
   printf("RESTART!\r\n");
   //HAL_TIM_Base_Start_IT(&htim2);
-  HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
+  //HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
   HAL_CAN_Start(&hcan);
+  DataCollect_PrepareHardware(&hadc1);
+  DataCollect_Start(&htim3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    encoder = __HAL_TIM_GET_COUNTER(&htim1);
+    // pedal = __HAL_TIM_GET_COUNTER(&htim1);
 
-    if (encoder > ENCODER_OVERFLOW)
+    if(DataCollect_Poll() == ADC1_RESULTS_STORED)
     {
-      //__HAL_TIM_SET_COUNTER(&htim1, 0);
-      //printf("OVERFLOW!OVERFLOW!OVERFLOW!");
-    }
-    else
-    {
-      if (encoder > ENCODER_MIN)
-      {
-        // Map encoder value to percentage of full current
-        targetCurrent = ((float)(encoder - ENCODER_MIN)) / (ENCODER_MAX - ENCODER_MIN);
+      DataCollect_Get(&pedal);
+      velocitySetpoint.f = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin) ? -10.0 : 10.0;
 
-        // Fix target current between 0-1
-        if (targetCurrent > 1.0f)
-          targetCurrent = 1.0f;
-
-        SendMotorCommand(targetCurrent, -10);
-        printf("0x%X, %d\r\n", encoder, (int) (targetCurrent * 100.0));
-      } else
+      if (pedal > PEDAL_OVERFLOW)
       {
-        SendMotorCommand(0, -10);
-        printf("0x%X, %d\r\n", encoder, 0);
+        //__HAL_TIM_SET_COUNTER(&htim1, 0);
+        printf("OF 0x%lX, %d\r\n", pedal, 0);
+      }
+      else
+      {
+        if (pedal > PEDAL_MIN)
+        {
+          // Map pedal value to percentage of full current
+          currentSetpoint.f = ((float)(pedal - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
+
+          // Fix target current between 0-1
+          if (currentSetpoint.f > 1.0f)
+            currentSetpoint.f = 1.0f;
+
+          SendMotorCommand(currentSetpoint, velocitySetpoint);
+          printf("0x%lX, %d\r\n", pedal, (int) (currentSetpoint.f * 100.0));
+        } else
+        {
+          SendMotorCommand((FloatBytes_t) 0.0f, velocitySetpoint);
+          printf("0x%lX, %d\r\n", pedal, 0);
+        }
       }
     }
-
-    HAL_Delay(100);
+    
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -204,6 +222,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -232,9 +251,60 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV4;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /** Enables the Clock Security System
   */
   HAL_RCC_EnableCSS();
+}
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+  /** Common config
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T3_TRGO;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_4;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_239CYCLES_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
 }
 
 /**
@@ -325,47 +395,47 @@ static void MX_TIM1_Init(void)
 }
 
 /**
-  * @brief TIM2 Initialization Function
+  * @brief TIM3 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_TIM2_Init(void)
+static void MX_TIM3_Init(void)
 {
 
-  /* USER CODE BEGIN TIM2_Init 0 */
+  /* USER CODE BEGIN TIM3_Init 0 */
 
-  /* USER CODE END TIM2_Init 0 */
+  /* USER CODE END TIM3_Init 0 */
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
-  /* USER CODE BEGIN TIM2_Init 1 */
+  /* USER CODE BEGIN TIM3_Init 1 */
 
-  /* USER CODE END TIM2_Init 1 */
-  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 1024-1;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 3125-1;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 3600 - 1;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 10 - 1;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
   }
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM2_Init 2 */
+  /* USER CODE BEGIN TIM3_Init 2 */
 
-  /* USER CODE END TIM2_Init 2 */
+  /* USER CODE END TIM3_Init 2 */
 
 }
 
@@ -403,26 +473,50 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin : RVRS_EN_Pin */
+  GPIO_InitStruct.Pin = RVRS_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(RVRS_EN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : POT_INA10_Pin */
+  GPIO_InitStruct.Pin = POT_INA10_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+  HAL_GPIO_Init(POT_INA10_GPIO_Port, &GPIO_InitStruct);
 
 }
 
 /* USER CODE BEGIN 4 */
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  HAL_UART_Transmit(&huart2, (uint8_t *)"DING\r\n", 6, 3000);
-}
 
 /* USER CODE END 4 */
 
