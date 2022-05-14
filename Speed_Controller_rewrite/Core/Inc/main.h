@@ -57,12 +57,18 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define POT_IN_Pin GPIO_PIN_4
-#define POT_IN_GPIO_Port GPIOA
+#define REGEN_VAL_Pin GPIO_PIN_0
+#define REGEN_VAL_GPIO_Port GPIOA
+#define PEDAL_POT_IN_Pin GPIO_PIN_4
+#define PEDAL_POT_IN_GPIO_Port GPIOA
+#define BRK_IN_Pin GPIO_PIN_5
+#define BRK_IN_GPIO_Port GPIOC
 #define RVRS_EN_Pin GPIO_PIN_6
 #define RVRS_EN_GPIO_Port GPIOC
-#define POT_INA10_Pin GPIO_PIN_10
-#define POT_INA10_GPIO_Port GPIOA
+#define REGEN_EN_Pin GPIO_PIN_8
+#define REGEN_EN_GPIO_Port GPIOC
+#define CRUISE_EN_Pin GPIO_PIN_10
+#define CRUISE_EN_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
