@@ -173,12 +173,12 @@ static void ProcessReadings(TransferHalf_t half, volatile uint16_t *adc_buf,
     if (half == FIRST_HALF)
     {
         sample_num = 0;
-        limit = BUF_LENGTH_PER_CHANNEL / 2;
+        limit = ADC1_BUF_LENGTH / 2;
     }
     else
     {
-        sample_num = BUF_LENGTH_PER_CHANNEL / 2;
-        limit = BUF_LENGTH_PER_CHANNEL;
+        sample_num = ADC1_BUF_LENGTH / 2;
+        limit = ADC1_BUF_LENGTH;
     }
 
     // Sum the samples
@@ -206,7 +206,8 @@ static void StoreResults(uint32_t results[], AdcId_t adcId)
     switch (adcId)
     {
         case ADC1_ID:
-            storedResults[0] = results[0];
+            for (int channel = 0; channel < ADC1_NUM_ANALOG_CHANNELS; channel++)
+                storedResults[channel] = results[channel];
             storedFlags |= ADC1_RESULTS_STORED;
             break;
         // case ADC2_ID:

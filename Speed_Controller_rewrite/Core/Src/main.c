@@ -33,8 +33,11 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // POT
-#define PEDAL_MIN (0x5FFF * 10)
-#define PEDAL_MAX (0x6B00 * 10)
+#define PEDAL_MIN (0x5FFF * 10) //~4095*100*60.0%
+#define PEDAL_MAX (0x6B00 * 10) //~4095*100*66.7%
+
+#define REGEN_MIN (0x07FF * 10) //~4095*100*5%
+#define REGEN_MAX (0x97F6 * 10) //~4095*100*95%
 
 // PED
 // #define PEDAL_MIN 0x0975
@@ -131,8 +134,9 @@ static void SendMotorCommand(FloatBytes_t currentSetpoint, FloatBytes_t velocity
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  uint32_t pedal;
+  uint32_t adcReadings[DATA_COLLECT_TOTAL_NUM_ANALOG_CHANNELS]; //ADC1_IN0 -> regen potentiometer, ADC1_IN4 -> pedal potentiometer
   FloatBytes_t currentSetpoint;
+  FloatBytes_t regenSetpoint;
   FloatBytes_t velocitySetpoint;
   GPIO_PinState brakePressed;
   GPIO_PinState regenEnabled;
@@ -179,34 +183,47 @@ int main(void)
     // pedal = __HAL_TIM_GET_COUNTER(&htim1);
 
     if(DataCollect_Poll() == ADC1_RESULTS_STORED)
-    {
-      DataCollect_Get(&pedal);
+    { 
+      DataCollect_Get(adcReadings);
       velocitySetpoint.f = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin) ? -10.0 : 10.0;
       brakePressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
       regenEnabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 
-      if (pedal > PEDAL_OVERFLOW)
+      if (adcReadings[1] > PEDAL_OVERFLOW)
       {
         //__HAL_TIM_SET_COUNTER(&htim1, 0);
-        printf("OF 0x%lX, %d\r\n", pedal, 0);
+        printf("OF 0x%lX, %d\r\n", adcReadings[1], 0);
       }
       else
       {
-        if (pedal > PEDAL_MIN)
+        if (adcReadings[1] > PEDAL_MIN && brakePressed != GPIO_PIN_SET)
         {
           // Map pedal value to percentage of full current
-          currentSetpoint.f = ((float)(pedal - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
+          currentSetpoint.f = ((float)(adcReadings[1] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
 
           // Fix target current between 0-1
           if (currentSetpoint.f > 1.0f)
             currentSetpoint.f = 1.0f;
+          else if (currentSetpoint.f < 0.0f)
+            currentSetpoint.f = 0.0f;
 
           SendMotorCommand(currentSetpoint, velocitySetpoint);
-          printf("0x%lX, %d\r\n", pedal, (int) (currentSetpoint.f * 100.0));
+          printf("0x%lX, %d\r\n", adcReadings[1], (int) (currentSetpoint.f * 100.0));
+        } else if (adcReadings[1] <= PEDAL_MIN && regenEnabled == GPIO_PIN_SET){
+          // Map regen pot to get percentage of current to regen
+          regenSetpoint.f = ((float)(adcReadings[0] - REGEN_MIN)) / (REGEN_MAX - REGEN_MIN);
+
+          if (regenSetpoint.f > 1.0f)
+            regenSetpoint.f = 1.0f;
+          else if (regenSetpoint.f < 0.0f)
+            regenSetpoint.f = 0.0f;
+
+          SendMotorCommand(regenSetpoint, (FloatBytes_t) 0.0f);
+          printf("0x%lX, %d\r\n", adcReadings[0], (int) (regenSetpoint.f * 100.0));
         } else
         {
           SendMotorCommand((FloatBytes_t) 0.0f, velocitySetpoint);
-          printf("0x%lX, %d\r\n", pedal, 0);
+          printf("0x%lX, %d\r\n", adcReadings[1], 0);
         }
       }
     }
@@ -431,7 +448,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 3600 - 1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 10 - 1;
+  htim3.Init.Period = 10;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
