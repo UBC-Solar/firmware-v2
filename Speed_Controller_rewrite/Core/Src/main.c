@@ -196,7 +196,18 @@ int main(void)
       }
       else
       {
-        if (adcReadings[1] > PEDAL_MIN && brakePressed != GPIO_PIN_SET)
+          /**
+           * Truth table :
+           * 
+           * Accel  |   Brake   | Regen   ||  Current | Speed 
+           *    0   |     x     |   0     ||     0    |   0
+           *    0   |     x     |   1     ||     1    |   0
+           *    x   |     1     |   x     ||     0    |   0
+           *    1   |     0     |   x     ||     1    |   1
+           * 
+           */
+
+        if (adcReadings[1] > PEDAL_MIN && brakePressed == GPIO_PIN_SET) //Accel pressed and brake NOT pressed 
         {
           // Map pedal value to percentage of full current
           currentSetpoint.f = ((float)(adcReadings[1] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
@@ -209,7 +220,7 @@ int main(void)
 
           SendMotorCommand(currentSetpoint, velocitySetpoint);
           printf("0x%lX, %d\r\n", adcReadings[1], (int) (currentSetpoint.f * 100.0));
-        } else if (adcReadings[1] <= PEDAL_MIN && regenEnabled == GPIO_PIN_SET){
+        } else if (adcReadings[1] <= PEDAL_MIN && regenEnabled != GPIO_PIN_SET){ //Accel NOT pressed and regen is enabled
           // Map regen pot to get percentage of current to regen
           regenSetpoint.f = ((float)(adcReadings[0] - REGEN_MIN)) / (REGEN_MAX - REGEN_MIN);
 
@@ -220,7 +231,7 @@ int main(void)
 
           SendMotorCommand(regenSetpoint, (FloatBytes_t) 0.0f);
           printf("0x%lX, %d\r\n", adcReadings[0], (int) (regenSetpoint.f * 100.0));
-        } else
+        } else //Accel NOT pressed and regen is NOT enabled, or brake is pressed 
         {
           SendMotorCommand((FloatBytes_t) 0.0f, velocitySetpoint);
           printf("0x%lX, %d\r\n", adcReadings[1], 0);
