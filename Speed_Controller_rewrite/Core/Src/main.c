@@ -33,8 +33,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // POT
-#define PEDAL_MIN (0x5FFF * 10) //~4095*100*60.0%
-#define PEDAL_MAX (0x6B00 * 10) //~4095*100*66.7%
+#define PEDAL_MIN (0x22000) //~4095*100*60.0%
+#define PEDAL_MAX (0x26a00) //~4095*100*66.7%
 
 #define REGEN_MIN (0x07FF * 10) //~4095*100*5%
 #define REGEN_MAX (0x97F6 * 10) //~4095*100*95%
@@ -138,7 +138,7 @@ int main(void)
   FloatBytes_t currentSetpoint;
   FloatBytes_t regenSetpoint;
   FloatBytes_t velocitySetpoint;
-  GPIO_PinState brakePressed;
+  //GPIO_PinState brakePressed;
   GPIO_PinState regenEnabled;
   /* USER CODE END 1 */
 
@@ -186,7 +186,7 @@ int main(void)
     { 
       DataCollect_Get(adcReadings);
       velocitySetpoint.f = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin) ? -10.0 : 10.0;
-      brakePressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
+      //brakePressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
       regenEnabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 
       if (adcReadings[1] > PEDAL_OVERFLOW)
@@ -207,7 +207,7 @@ int main(void)
            * 
            */
 
-        if (adcReadings[1] > PEDAL_MIN && brakePressed == GPIO_PIN_SET) //Accel pressed and brake NOT pressed 
+        if (adcReadings[1] > PEDAL_MIN /*&& brakePressed == GPIO_PIN_SET*/) //Accel pressed and brake NOT pressed 
         {
           // Map pedal value to percentage of full current
           currentSetpoint.f = ((float)(adcReadings[1] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
