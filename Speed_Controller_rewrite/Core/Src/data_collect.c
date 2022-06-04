@@ -191,11 +191,11 @@ static void ProcessReadings(TransferHalf_t half, volatile uint16_t *adc_buf,
         }
     }
 
+    printf("Half conv complete :: CH1 : %d || CH2 : %d\r\n", (int)sum[0], (int)sum[1]);
     for (int channel = 0; channel < num_analog_channels; channel++)
     {
         // Uncomment if average should be taken instead
         // results[channel] = ((float)sum[channel]) / (BUF_LENGTH_PER_CHANNEL / 2);
-
         results[channel] = sum[channel];
     }
 }

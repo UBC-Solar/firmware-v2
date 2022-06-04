@@ -71,6 +71,8 @@ TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart2;
 
+int errorFlag = 0;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -138,7 +140,7 @@ int main(void)
   FloatBytes_t currentSetpoint;
   FloatBytes_t regenSetpoint;
   FloatBytes_t velocitySetpoint;
-  GPIO_PinState brakePressed;
+  //GPIO_PinState brakePressed;
   GPIO_PinState regenEnabled;
   /* USER CODE END 1 */
 
@@ -183,14 +185,20 @@ int main(void)
     if(DataCollect_Poll() == ADC1_RESULTS_STORED)
     { 
       DataCollect_Get(adcReadings);
+
       velocitySetpoint.f = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin) ? -10.0 : 10.0;
-      brakePressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
+      //brakePressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
       regenEnabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+
+      currentSetpoint.f = ((float)(adcReadings[1] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
+      regenSetpoint.f = ((float)(adcReadings[0] - REGEN_MIN)) / (REGEN_MAX - REGEN_MIN);
+      //printf("PEDAL : %.3d | REGEN : %.3d | BRAKE : %.1d | REGEN_EN : %.1d\r\n", (int)(currentSetpoint.f * 100), (int)(regenSetpoint.f * 100), (int)brakePressed, (int)regenEnabled);
+        
 
       if (adcReadings[1] > PEDAL_OVERFLOW)
       {
         //__HAL_TIM_SET_COUNTER(&htim1, 0);
-        printf("OF 0x%lX, %d\r\n", adcReadings[1], 0);
+        //printf("PEDAL : %.1d\r\n", (int)adcReadings[1]);
       }
       else
       {
@@ -206,10 +214,13 @@ int main(void)
            */
       
         // Map pedal value to percentage of full current
-        currentSetpoint.f = ((float)(adcReadings[1] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
         // Map regen pot to get percentage of current to regen
+        
+        /*
+        currentSetpoint.f = ((float)(adcReadings[1] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
         regenSetpoint.f = ((float)(adcReadings[0] - REGEN_MIN)) / (REGEN_MAX - REGEN_MIN);
         printf("PEDAL : %.3d | REGEN : %.3d | BRAKE : %.1d | REGEN_EN : %.1d", (int)(currentSetpoint.f * 100), (int)(regenSetpoint.f * 100), (int)brakePressed, (int)regenEnabled);
+        */
 
         if (adcReadings[1] > PEDAL_MIN /*&& brakePressed == GPIO_PIN_SET*/) //Accel pressed and brake NOT pressed 
         {
@@ -570,8 +581,10 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
+  errorFlag = 1;
   while (1)
   {
+    printf("Initialization error!");
   }
   /* USER CODE END Error_Handler_Debug */
 }
