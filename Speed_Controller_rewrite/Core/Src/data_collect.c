@@ -109,6 +109,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
     switch (adcId)
     {
         case ADC1_ID:
+            //printf("Half conv complete :: CH1 : %d || CH2_I : %d\r\n", (int)adc1_buf[0], (int)adc1_buf[201]);
             ProcessReadings(FIRST_HALF, adc1_buf, results, ADC1_NUM_ANALOG_CHANNELS);
             break;
         // case ADC2_ID:
@@ -118,12 +119,14 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
             Error_Handler();
     }
 
+    //printf("Half conv complete :: CH1 : %d || CH2_I : %d\r\n", (int)results[0], (int)results[1]);
     StoreResults(results, adcId);
 }
 
 // Conversion complete DMA interrupt callback
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
+    /*
     uint32_t results[MAX_NUM_ANALOG_CHANNELS];
     AdcId_t adcId = GetAdcId(hadc);
 
@@ -138,8 +141,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
         default:
             Error_Handler();
     }
-
-    StoreResults(results, adcId);
+    //printf("Half conv complete :: CH1 : %d || CH2_I : %d\r\n", (int)results[0], (int)results[1]);
+    StoreResults(results, adcId);*/
 }
 
 void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
@@ -191,7 +194,7 @@ static void ProcessReadings(TransferHalf_t half, volatile uint16_t *adc_buf,
         }
     }
 
-    printf("Half conv complete :: CH1 : %d || CH2 : %d\r\n", (int)sum[0], (int)sum[1]);
+    //printf("Half conv complete :: CH1 : %d || CH2_I : %d\r\n", (int)sum[0], (int)sum[1]);
     for (int channel = 0; channel < num_analog_channels; channel++)
     {
         // Uncomment if average should be taken instead

@@ -33,8 +33,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // POT
-#define PEDAL_MIN (0x22000) //~4095*100*60.0%
-#define PEDAL_MAX (0x26A00) //~4095*100*66.7%
+#define PEDAL_MIN (0x36000)
+#define PEDAL_MAX (0x3BE00)
 
 #define REGEN_MIN (0x07FF * 10) //~4095*100*5%
 #define REGEN_MAX (0x97F6 * 10) //~4095*100*95%
@@ -66,22 +66,18 @@ DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan;
 
-TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart2;
 
-int errorFlag = 0;
-
 /* USER CODE BEGIN PV */
-
+int errorFlag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN_Init(void);
-static void MX_TIM1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
@@ -155,7 +151,6 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
-
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
@@ -163,7 +158,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN_Init();
-  MX_TIM1_Init();
   MX_USART2_UART_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
@@ -190,12 +184,11 @@ int main(void)
       //brakePressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
       regenEnabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 
-      currentSetpoint.f = ((float)(adcReadings[1] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
-      regenSetpoint.f = ((float)(adcReadings[0] - REGEN_MIN)) / (REGEN_MAX - REGEN_MIN);
-      //printf("PEDAL : %.3d | REGEN : %.3d | BRAKE : %.1d | REGEN_EN : %.1d\r\n", (int)(currentSetpoint.f * 100), (int)(regenSetpoint.f * 100), (int)brakePressed, (int)regenEnabled);
+      currentSetpoint.f = ((float)(adcReadings[0] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
+      regenSetpoint.f = ((float)(adcReadings[1] - REGEN_MIN)) / (REGEN_MAX - REGEN_MIN);
+      printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d\r\n", (int)(adcReadings[0]), (int)(adcReadings[1]), (int)regenEnabled);
         
-
-      if (adcReadings[1] > PEDAL_OVERFLOW)
+      if (adcReadings[0] > PEDAL_OVERFLOW)
       {
         //__HAL_TIM_SET_COUNTER(&htim1, 0);
         //printf("PEDAL : %.1d\r\n", (int)adcReadings[1]);
@@ -222,7 +215,7 @@ int main(void)
         printf("PEDAL : %.3d | REGEN : %.3d | BRAKE : %.1d | REGEN_EN : %.1d", (int)(currentSetpoint.f * 100), (int)(regenSetpoint.f * 100), (int)brakePressed, (int)regenEnabled);
         */
 
-        if (adcReadings[1] > PEDAL_MIN /*&& brakePressed == GPIO_PIN_SET*/) //Accel pressed and brake NOT pressed 
+        if (adcReadings[0] > PEDAL_MIN /*&& brakePressed == GPIO_PIN_SET*/) //Accel pressed and brake NOT pressed 
         {
           // Fix target current between 0-1
           if (currentSetpoint.f > 1.0f)
@@ -231,7 +224,7 @@ int main(void)
             currentSetpoint.f = 0.0f;
 
           SendMotorCommand(currentSetpoint, velocitySetpoint);          
-        } else if (adcReadings[1] <= PEDAL_MIN && regenEnabled != GPIO_PIN_SET){ //Accel NOT pressed and regen is enabled
+        } else if (adcReadings[0] <= PEDAL_MIN && regenEnabled != GPIO_PIN_SET){ //Accel NOT pressed and regen is enabled
 
           if (regenSetpoint.f > 1.0f)
             regenSetpoint.f = 1.0f;
@@ -347,6 +340,7 @@ static void MX_ADC1_Init(void)
 
   /** Configure Regular Channel
   */
+  sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = ADC_REGULAR_RANK_2;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
@@ -392,56 +386,6 @@ static void MX_CAN_Init(void)
   /* USER CODE BEGIN CAN_Init 2 */
 
   /* USER CODE END CAN_Init 2 */
-
-}
-
-/**
-  * @brief TIM1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM1_Init(void)
-{
-
-  /* USER CODE BEGIN TIM1_Init 0 */
-
-  /* USER CODE END TIM1_Init 0 */
-
-  TIM_Encoder_InitTypeDef sConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM1_Init 1 */
-
-  /* USER CODE END TIM1_Init 1 */
-  htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
-  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
-  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
-  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
-  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
-  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
-  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
-  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
-  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
-  if (HAL_TIM_Encoder_Init(&htim1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM1_Init 2 */
-
-  /* USER CODE END TIM1_Init 2 */
 
 }
 
@@ -559,6 +503,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PA8 PA9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : CRUISE_EN_Pin */
   GPIO_InitStruct.Pin = CRUISE_EN_Pin;
