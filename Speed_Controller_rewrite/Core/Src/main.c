@@ -33,11 +33,11 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // POT
-#define PEDAL_MIN (0x36000)
-#define PEDAL_MAX (0x3BE00)
+#define PEDAL_MIN 215000
+#define PEDAL_MAX 245000
 
-#define REGEN_MIN (0x07FF * 10) //~4095*100*5%
-#define REGEN_MAX (0x97F6 * 10) //~4095*100*95%
+#define REGEN_MIN 0 //~4095*100*5%
+#define REGEN_MAX 409500 //~4095*100*95%
 
 // PED
 // #define PEDAL_MIN 0x0975
@@ -184,10 +184,10 @@ int main(void)
       //brakePressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
       regenEnabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
 
-      currentSetpoint.f = ((float)(adcReadings[0] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
-      regenSetpoint.f = ((float)(adcReadings[1] - REGEN_MIN)) / (REGEN_MAX - REGEN_MIN);
-      printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d\r\n", (int)(adcReadings[0]), (int)(adcReadings[1]), (int)regenEnabled);
-        
+      currentSetpoint.f = ((float)((int)adcReadings[0] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
+      regenSetpoint.f = ((float)((int)adcReadings[1] - REGEN_MIN)) / (REGEN_MAX - REGEN_MIN);
+      printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d\r\n", (int)adcReadings[0], (int)adcReadings[1], (int)regenEnabled);
+
       if (adcReadings[0] > PEDAL_OVERFLOW)
       {
         //__HAL_TIM_SET_COUNTER(&htim1, 0);
@@ -218,6 +218,8 @@ int main(void)
         if (adcReadings[0] > PEDAL_MIN /*&& brakePressed == GPIO_PIN_SET*/) //Accel pressed and brake NOT pressed 
         {
           // Fix target current between 0-1
+          printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d\r\n", (int)(currentSetpoint.f*100), (int)(regenSetpoint.f*100), (int)regenEnabled);
+
           if (currentSetpoint.f > 1.0f)
             currentSetpoint.f = 1.0f;
           else if (currentSetpoint.f < 0.0f)

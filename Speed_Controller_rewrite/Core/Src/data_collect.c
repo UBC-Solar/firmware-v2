@@ -170,7 +170,7 @@ static void ProcessReadings(TransferHalf_t half, volatile uint16_t *adc_buf,
 {
     uint32_t sum[MAX_NUM_ANALOG_CHANNELS] = {0};
     uint32_t sample_num;
-    uint32_t sample_start_index;
+    //uint32_t sample_start_index;
     uint32_t limit;
 
     if (half == FIRST_HALF)
@@ -185,12 +185,12 @@ static void ProcessReadings(TransferHalf_t half, volatile uint16_t *adc_buf,
     }
 
     // Sum the samples
-    for (; sample_num < limit; sample_num++)
+    for (; sample_num < limit; sample_num+=2)
     {
-        sample_start_index = sample_num * num_analog_channels;
+        //sample_start_index = sample_num * num_analog_channels;
         for (int channel = 0; channel < num_analog_channels; channel++)
         {
-            sum[channel] += adc_buf[sample_start_index + channel];
+            sum[channel] += adc_buf[sample_num + channel];
         }
     }
 
