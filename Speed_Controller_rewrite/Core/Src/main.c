@@ -186,12 +186,11 @@ int main(void)
 
       currentSetpoint.f = ((float)((int)adcReadings[0] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
       regenSetpoint.f = ((float)((int)adcReadings[1] - REGEN_MIN)) / (REGEN_MAX - REGEN_MIN);
-      printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d\r\n", (int)adcReadings[0], (int)adcReadings[1], (int)regenEnabled);
 
       if (adcReadings[0] > PEDAL_OVERFLOW)
       {
-        //__HAL_TIM_SET_COUNTER(&htim1, 0);
-        //printf("PEDAL : %.1d\r\n", (int)adcReadings[1]);
+        printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d | VEL : %.1d | STATE : OVFLW\r\n", (int)(currentSetpoint.f*100), (int)(regenSetpoint.f*100), (int)regenEnabled, (int)velocitySetpoint.f);
+        SendMotorCommand((FloatBytes_t) 0.0f, velocitySetpoint);
       }
       else
       {
@@ -217,27 +216,34 @@ int main(void)
 
         if (adcReadings[0] > PEDAL_MIN /*&& brakePressed == GPIO_PIN_SET*/) //Accel pressed and brake NOT pressed 
         {
-          // Fix target current between 0-1
-          printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d\r\n", (int)(currentSetpoint.f*100), (int)(regenSetpoint.f*100), (int)regenEnabled);
+          printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d | VEL : %.1d | STATE : ACCEL\r\n", (int)(currentSetpoint.f*100), (int)(regenSetpoint.f*100), (int)regenEnabled, (int)velocitySetpoint.f);
 
+          // Fix target current between 0-1
           if (currentSetpoint.f > 1.0f)
             currentSetpoint.f = 1.0f;
           else if (currentSetpoint.f < 0.0f)
             currentSetpoint.f = 0.0f;
 
           SendMotorCommand(currentSetpoint, velocitySetpoint);          
-        } else if (adcReadings[0] <= PEDAL_MIN && regenEnabled != GPIO_PIN_SET){ //Accel NOT pressed and regen is enabled
+        } else if (adcReadings[0] <= PEDAL_MIN){ //Accel NOT pressed and regen is enabled
+          if (regenEnabled == GPIO_PIN_SET)
+          {
+            printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d | VEL : %.1d | STATE : REGEN\r\n", (int)(currentSetpoint.f*100), (int)(regenSetpoint.f*100), (int)regenEnabled, (int)velocitySetpoint.f);
 
-          if (regenSetpoint.f > 1.0f)
-            regenSetpoint.f = 1.0f;
-          else if (regenSetpoint.f < 0.0f)
-            regenSetpoint.f = 0.0f;
+            if (regenSetpoint.f > 1.0f)
+              regenSetpoint.f = 1.0f;
+            else if (regenSetpoint.f < 0.0f)
+              regenSetpoint.f = 0.0f;
 
-          SendMotorCommand(regenSetpoint, (FloatBytes_t) 0.0f);
-        } else //Accel NOT pressed and regen is NOT enabled, or brake is pressed 
-        {
-          SendMotorCommand((FloatBytes_t) 0.0f, velocitySetpoint);
-        }
+            SendMotorCommand(regenSetpoint, (FloatBytes_t) 0.0f);
+          }
+          else 
+          {
+            printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d | VEL : %.1d | STATE : DECEL\r\n", (int)(currentSetpoint.f*100), (int)(regenSetpoint.f*100), (int)regenEnabled, (int)velocitySetpoint.f);
+
+            SendMotorCommand((FloatBytes_t) 0.0f, velocitySetpoint);
+          }
+        } 
       }
     }
     
