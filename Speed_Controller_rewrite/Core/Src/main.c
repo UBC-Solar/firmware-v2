@@ -183,6 +183,7 @@ int main(void)
       velocitySetpoint.f = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin) ? -10.0 : 10.0;
       //brakePressed = HAL_GPIO_ReadPin(BRK_IN_GPIO_Port, BRK_IN_Pin);
       regenEnabled = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+      //printf("PEDAL : %.3d | REGEN : %.3d | REGEN_EN : %.1d | VEL : %.1d\r\n", (int)adcReadings[0], (int)adcReadings[1], (int)regenEnabled, (int)velocitySetpoint.f);
 
       currentSetpoint.f = ((float)((int)adcReadings[0] - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
       regenSetpoint.f = ((float)((int)adcReadings[1] - REGEN_MIN)) / (REGEN_MAX - REGEN_MIN);
