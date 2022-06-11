@@ -33,7 +33,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // POT
-#define PEDAL_MIN 215000
+#define PEDAL_MIN 219000
 #define PEDAL_MAX 245000
 
 #define REGEN_MIN 0 //~4095*100*5%
@@ -61,7 +61,7 @@ typedef union
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
- ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan;
