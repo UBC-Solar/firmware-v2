@@ -1,14 +1,11 @@
 #MicroXplorer Configuration settings - do not modify
 ADC1.Channel-0\#ChannelRegularConversion=ADC_CHANNEL_4
-ADC1.Channel-1\#ChannelRegularConversion=ADC_CHANNEL_0
 ADC1.ExternalTrigConv=ADC_EXTERNALTRIGCONV_T3_TRGO
-ADC1.IPParameters=Rank-0\#ChannelRegularConversion,Channel-0\#ChannelRegularConversion,SamplingTime-0\#ChannelRegularConversion,NbrOfConversionFlag,ExternalTrigConv,Rank-1\#ChannelRegularConversion,Channel-1\#ChannelRegularConversion,SamplingTime-1\#ChannelRegularConversion,NbrOfConversion,master
-ADC1.NbrOfConversion=2
+ADC1.IPParameters=Rank-0\#ChannelRegularConversion,Channel-0\#ChannelRegularConversion,SamplingTime-0\#ChannelRegularConversion,NbrOfConversionFlag,ExternalTrigConv,NbrOfConversion,master
+ADC1.NbrOfConversion=1
 ADC1.NbrOfConversionFlag=1
 ADC1.Rank-0\#ChannelRegularConversion=1
-ADC1.Rank-1\#ChannelRegularConversion=2
 ADC1.SamplingTime-0\#ChannelRegularConversion=ADC_SAMPLETIME_239CYCLES_5
-ADC1.SamplingTime-1\#ChannelRegularConversion=ADC_SAMPLETIME_239CYCLES_5
 ADC1.master=1
 CAN.BS1=CAN_BS1_15TQ
 CAN.BS2=CAN_BS2_2TQ
@@ -187,7 +184,7 @@ SH.S_TIM1_CH1.ConfNb=1
 SH.S_TIM1_CH2.0=TIM1_CH2
 SH.S_TIM1_CH2.ConfNb=1
 TIM3.IPParameters=TIM_MasterOutputTrigger,Prescaler,Period
-TIM3.Period=10
+TIM3.Period=10/4
 TIM3.Prescaler=3600 - 1
 TIM3.TIM_MasterOutputTrigger=TIM_TRGO_UPDATE
 USART2.IPParameters=VirtualMode
