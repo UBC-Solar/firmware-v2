@@ -99,6 +99,18 @@ static CAN_TxHeaderTypeDef speedCommandCanHeader = {
     DISABLE       // Timestamp
 };
 
+static CAN_RxHeaderTypeDef speedFeedbackCanHeader = {
+   0x4001,
+   0x0000,
+   CAN_ID_STD,
+   CAN_RTR_DATA,
+   8,
+   DISABLE
+};
+
+static CAN_FilterTypeDef canFilter;
+
+
 /**
  * Sends a CAN message to the motor controller with desired params
  *
@@ -147,6 +159,20 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   
+  canFilter.FilterIdHigh = (uint16_t)0x503<<5;
+  canFilter.FilterMaskIdHigh = (uint16_t)0x503<<5;
+
+  canFilter.FilterIdLow = (uint16_t)0x503<<5;
+  canFilter.FilterMaskIdLow = (uint16_t)0x503<<5;
+
+  canFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  canFilter.FilterBank = (uint16_t)0;
+
+  canFilter.FilterMode = CAN_FILTERMODE_IDMASK;
+  canFilter.FilterScale = CAN_FILTERSCALE_16BIT;
+  canFilter.FilterActivation = CAN_FILTER_ENABLE;
+
+  HAL_CAN_ConfigFilter(&hcan, &canFilter);
   /* USER CODE END Init */
 
   /* Configure the system clock */
