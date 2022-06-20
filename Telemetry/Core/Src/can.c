@@ -34,11 +34,17 @@ void CanFilterSetup(void)
 	// Use mask and list mode to filter IDs from the CAN ID BOM
 
 	// Filter for 0x500 and 0x600 IDs
-    CAN_filter0.FilterIdHigh = (uint16_t) (0x501 << 5);
-    CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x7F5 << 5);
+    // CAN_filter0.FilterIdHigh = (uint16_t) (0x501 << 5);
+    // CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x7F5 << 5);
+    //
+    // CAN_filter0.FilterIdLow = (uint16_t) (0x620 << 5);
+    // CAN_filter0.FilterMaskIdLow = (uint16_t) (0x7F8 << 5);
 
-    CAN_filter0.FilterIdLow = (uint16_t) (0x620 << 5);
-    CAN_filter0.FilterMaskIdLow = (uint16_t) (0x7F8 << 5);
+    CAN_filter0.FilterIdHigh = (uint16_t) (0x000 << 5);
+    CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x000 << 5);
+
+    CAN_filter0.FilterIdLow = (uint16_t) (0x000 << 5);
+    CAN_filter0.FilterMaskIdLow = (uint16_t) (0x000 << 5);
 
     CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     CAN_filter0.FilterBank = (uint32_t) 0;
@@ -61,7 +67,7 @@ void CanFilterSetup(void)
 
 	// Configure reception filters
     HAL_CAN_ConfigFilter(&hcan, &CAN_filter0);
-    HAL_CAN_ConfigFilter(&hcan, &CAN_filter1);
+    // HAL_CAN_ConfigFilter(&hcan, &CAN_filter1);
 
 }
 
