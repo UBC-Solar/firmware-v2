@@ -31,7 +31,7 @@
 //-------------------------------------------
 
 //
-//FIR filter related variables
+//FIR filter / average related variables
 //
 static volatile uint16_t supp_aAdcVal[SUPP_RAW_READING_BUFFER_LENGTH] = {0u};
 static volatile uint8_t  supp_bufferIndex = 0u;
@@ -86,12 +86,15 @@ void SUPP_UpdateAdcFilter(uint16_t adcVal)
 	supp_aAdcVal[supp_bufferIndex] = adcVal;
 	supp_bufferIndex = SUPP_GET_NEXT_IND(supp_bufferIndex);
 
+	// Perform average of readings in buffer
 	for(index = SUPP_BUFFER_FIRST_INDEX; index < SUPP_RAW_READING_BUFFER_LENGTH; index++)
 	{
 		supp_bufferSum += supp_aAdcVal[index];
 	}
 
 	supp_filteredOut = supp_bufferSum >> 3u;
+
+	// FIR filter code below as an alternate option
 
 	//supp_bufferSumIndex = supp_bufferIndex;
 	//supp_fFilteredOut = 0.0f;

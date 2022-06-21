@@ -19,10 +19,10 @@
 #include "stm32f1xx_hal.h"
 #include "main.h"
 #include "supp.h"
+
 //-------------------------------------------
 // Constant Definitions & Macros
 //-------------------------------------------
-
 #define SM_CAN_PERIOD               (1000u)
 #define SM_STATE_DELAY_TIME			(1000u)
 #define SM_FLT_MAX_COUNTER_VAL		(20u)
@@ -74,6 +74,7 @@ static void sm_State9Handler(void);
 static void sm_State10Handler(void);
 static void sm_FltCheck(void);
 static uint8_t sm_IsStatusFlagged(uint8_t flag);
+
 //-------------------------------------------
 // Local Function Implementations
 //-------------------------------------------
@@ -183,14 +184,14 @@ static void sm_State10Handler(void)
 {
 	if (sm_IsStatusFlagged(SM_STATUS_LLIM_HIGH_FLAG))
 	{
-		NVIC_DisableIRQ(TIM2_IRQn);
+		HAL_NVIC_DisableIRQ(TIM2_IRQn);
 		HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_SET);
 		HAL_Delay(SM_PC_DELAY_TIME_1);
 		HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_SET);
 		HAL_Delay(SM_PC_DELAY_TIME_2);
 		HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_RESET);
 		SM_ClearStatusFlag(SM_STATUS_LLIM_HIGH_FLAG);
-		NVIC_EnableIRQ(TIM2_IRQn);
+		HAL_NVIC_EnableIRQ(TIM2_IRQn);
 	}
 }
 

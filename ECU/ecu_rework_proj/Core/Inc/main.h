@@ -104,5 +104,3 @@ TIM_HandleTypeDef htim3;
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
