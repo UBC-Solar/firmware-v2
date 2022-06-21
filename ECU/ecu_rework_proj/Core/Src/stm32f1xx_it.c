@@ -23,7 +23,7 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "sm.h"
+#include "hlim_llim.h"
 #include "supp.h"
 /* USER CODE END Includes */
 
@@ -34,10 +34,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TIM2_DEBOUNCE_TIME_MS 				(50u)
-#define TIM2_PERIOD_TIME_MS 				(50u)
-#define PC_FLAG_SET							(1u)
-#define PC_FLAG_RESET						(0u)
 
 /* USER CODE END PD */
 
@@ -49,33 +45,11 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 
-//
-// Digital input debounce states
-//
-typedef enum digin_eDebounceState
-{
-	digin_MaybeDown = 0u,
-	digin_Down,
-	digin_MaybeUp,
-	digin_Up,
-}digin_eDebounceState;
-
-static volatile digin_eDebounceState diginLLIMState = digin_MaybeDown;
-static volatile digin_eDebounceState diginLLIMNextState = digin_MaybeDown;
-static volatile uint8_t diginLLIMDebounceTim = 0u;
-
-static volatile digin_eDebounceState diginHLIMState = digin_MaybeDown;
-static volatile digin_eDebounceState diginHLIMNextState = digin_MaybeDown;
-static volatile uint8_t diginHLIMDebounceTim = 0u;
-
-static volatile uint8_t pcFlag = PC_FLAG_RESET;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN PFP */
-static uint8_t digin_LLIMIsHigh(void);
-static uint8_t digin_HLIMIsHigh(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -87,8 +61,6 @@ static uint8_t digin_HLIMIsHigh(void);
 extern ADC_HandleTypeDef hadc1;
 extern TIM_HandleTypeDef htim2;
 /* USER CODE BEGIN EV */
-
-volatile uint8_t itDbCounter;//Debounce counter
 
 /* USER CODE END EV */
 
@@ -236,7 +208,7 @@ void SysTick_Handler(void)
 void ADC1_2_IRQHandler(void)
 {
   /* USER CODE BEGIN ADC1_2_IRQn 0 */
-  SUPP_UpdateAdcFilter(HAL_ADC_GetValue(&hadc1));
+
   /* USER CODE END ADC1_2_IRQn 0 */
   HAL_ADC_IRQHandler(&hadc1);
   /* USER CODE BEGIN ADC1_2_IRQn 1 */
@@ -249,178 +221,32 @@ void ADC1_2_IRQHandler(void)
   */
 void TIM2_IRQHandler(void)
 {
- /* USER CODE BEGIN TIM2_IRQn 0 */
-  diginLLIMState = diginLLIMNextState;
-  switch(diginLLIMState)
-  {
-	  case digin_MaybeDown:
-		  if(digin_LLIMIsHigh())
-		  {
-			  diginLLIMNextState = digin_MaybeUp;
-		  }
-		  else
-		  {
-			  if(diginLLIMDebounceTim < TIM2_DEBOUNCE_TIME_MS)
-			  {
-				  diginLLIMDebounceTim += TIM2_PERIOD_TIME_MS;
-				  diginLLIMNextState = digin_MaybeDown;
-			  }
-			  else
-			  {
-				  diginLLIMDebounceTim = 0u;
-				  diginLLIMNextState = digin_Down;
-			  }
-		  }
-		  break;
-
-	  case digin_Down:
-		  if(digin_LLIMIsHigh())
-		  {
-			  diginLLIMNextState = digin_MaybeUp;
-		  }
-		  else
-		  {
-			  diginLLIMNextState = digin_Down;
-			  pcFlag = PC_FLAG_SET;
-			  HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_RESET);
-			  HAL_GPIO_WritePin(GPIOA, PC_OUT_Pin, GPIO_PIN_RESET);
-		  }
-		  break;
-
-
-	  case digin_MaybeUp:
-		  if(digin_LLIMIsHigh())
-		  {
-			  if(diginLLIMDebounceTim < TIM2_DEBOUNCE_TIME_MS)
-			  {
-				  diginLLIMDebounceTim += TIM2_PERIOD_TIME_MS;
-				  diginLLIMNextState = digin_MaybeUp;
-			  }
-			  else
-			  {
-				  diginLLIMDebounceTim = 0u;
-				  diginLLIMNextState = digin_Up;
-			  }
-		  }
-		  else
-		  {
-			  diginLLIMNextState = digin_MaybeDown;
-		  }
-		  break;
-
-	  case digin_Up:
-		  if(digin_LLIMIsHigh())
-		  {
-			  diginLLIMNextState = digin_Up;
-			  if(pcFlag == PC_FLAG_SET)
-			  {
-				  pcFlag = PC_FLAG_RESET;
-				  SM_SetStatusFlag(SM_STATUS_LLIM_HIGH_FLAG);
-			  }
-
-		  }
-		  else
-		  {
-			  diginLLIMNextState = digin_MaybeDown;
-		  }
-		  break;
-
-	  default:
-		  /* Do Nothing */
-		  break;
-
-  }
-
-  diginHLIMState = diginHLIMNextState;
-
-  switch(diginHLIMState)
-  {
-  case digin_MaybeDown:
-	  if(digin_HLIMIsHigh())
-	  {
-		  diginHLIMNextState = digin_MaybeUp;
-	  }
-	  else
-	  {
-		  if(diginHLIMDebounceTim < TIM2_DEBOUNCE_TIME_MS)
-		  {
-			  diginHLIMDebounceTim += TIM2_PERIOD_TIME_MS;
-			  diginHLIMNextState = digin_MaybeDown;
-		  }
-		  else
-		  {
-			  diginHLIMDebounceTim = 0u;
-			  diginHLIMNextState = digin_Down;
-		  }
-	  }
-	  break;
-
-  case digin_Down:
-	  if(digin_HLIMIsHigh())
-	  {
-		  diginHLIMNextState = digin_MaybeUp;
-	  }
-	  else
-	  {
-		  diginHLIMNextState = digin_Down;
-		  HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_RESET);
-	  }
-	  break;
-
-  case digin_MaybeUp:
-	  if(digin_HLIMIsHigh())
-	  {
-		  if(diginHLIMDebounceTim < TIM2_DEBOUNCE_TIME_MS)
-		  {
-			  diginHLIMDebounceTim += TIM2_PERIOD_TIME_MS;
-			  diginHLIMNextState = digin_MaybeUp;
-		  }
-		  else
-		  {
-			  diginHLIMDebounceTim = 0u;
-			  diginHLIMNextState = digin_Up;
-		  }
-	  }
-	  else
-	  {
-		  diginHLIMNextState = digin_MaybeDown;
-	  }
-	  break;
-
-  case digin_Up:
-	  if(digin_HLIMIsHigh())
-	  {
-		  diginHLIMNextState = digin_Up;
-		  HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_SET);
-	  }
-	  else
-	  {
-		  diginHLIMNextState = digin_MaybeDown;
-	  }
-	  break;
-
-  default:
-	  /* Do Nothing */
-	  break;
-
-  }
+  /* USER CODE BEGIN TIM2_IRQn 0 */
 
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
+
   /* USER CODE END TIM2_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
-
-static uint8_t digin_LLIMIsHigh(void)
+/* Interrupt callback tie-ins ------------------------------------------------*/
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-	return (GPIO_PIN_SET == HAL_GPIO_ReadPin(GPIOA, LLIM_IN_Pin));
+	if (hadc->Instance == ADC1)
+	{
+		SUPP_UpdateAdcFilter(HAL_ADC_GetValue(&hadc1));
+	}
 }
 
-static uint8_t digin_HLIMIsHigh(void)
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	return (GPIO_PIN_SET == HAL_GPIO_ReadPin(GPIOA, HLIM_IN_Pin));
+    if (htim->Instance == TIM2)
+    {
+        runLLIMStateMachine();
+        runHLIMStateMachine();
+    }
 }
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
