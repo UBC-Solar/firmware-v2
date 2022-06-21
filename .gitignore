@@ -5,7 +5,6 @@
 *.o
 *.ko
 *.obj
-*.elf
 
 # Linker output
 *.ilk
@@ -50,3 +49,18 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# IDE files
+.idea*
+.metadata*
+.vscode*
+RemoteSystemsTempFiles*
+.settings/*
+
+# Compiled binaries
+*.elf
+*.bin
+
+.cache*
+
+.DS_Store
