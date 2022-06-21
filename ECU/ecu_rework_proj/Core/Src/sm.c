@@ -31,6 +31,7 @@
 #define SM_ADCVAL_LOWER_MASK		((uint16_t)0xff)
 #define SM_ADCVAL_SHIFT_VAL			(8u)
 #define SM_ADCVAL_UPPER_MASK		((uint16_t)(0xff << SM_ADCVAL_SHIFT_VAL))
+#define SM_FAULT_LIGHT_HALF_PERIOD	(250u)
 
 //-------------------------------------------
 // Local Variables
@@ -200,7 +201,8 @@ static void sm_State11Handler(void)
 {
 	if(sm_IsStatusFlagged(SM_STATUS_FLT_FLAG))
 	{
-		__disable_irq();
+		HAL_NVIC_DisableIRQ(TIM2_IRQn);
+		HAL_NVIC_DisableIRQ(ADC1_IRQn);
 		HAL_GPIO_WritePin(GPIOB, SWAP_OUT_Pin, GPIO_PIN_RESET);
 		HAL_GPIO_WritePin(GPIOA, HLIM_OUT_Pin, GPIO_PIN_RESET);
 		HAL_GPIO_WritePin(GPIOB, LLIM_OUT_Pin, GPIO_PIN_RESET);
@@ -212,9 +214,9 @@ static void sm_State11Handler(void)
 		for(;;)
 		{
 			HAL_GPIO_WritePin(GPIOB, FLT_OUT_Pin, GPIO_PIN_SET);
-			HAL_Delay(SM_STATE_DELAY_TIME);
+			HAL_Delay(SM_FAULT_LIGHT_HALF_PERIOD);
 			HAL_GPIO_WritePin(GPIOB, FLT_OUT_Pin, GPIO_PIN_RESET);
-			HAL_Delay(SM_STATE_DELAY_TIME);
+			HAL_Delay(SM_FAULT_LIGHT_HALF_PERIOD);
 		}
 	}
 }
