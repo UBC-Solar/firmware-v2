@@ -197,7 +197,7 @@ int main(void)
         if (pedal > PEDAL_MIN)
         {
           // Map pedal value to percentage of full current
-          currentSetpoint.f = regen_state ? 1.0f : ((float)(pedal - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
+          currentSetpoint.f = ((float)(pedal - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
 
           // Fix target current between 0-1
           if (currentSetpoint.f > 1.0f)
@@ -207,7 +207,8 @@ int main(void)
           printf("0x%lX, %d\r\n", pedal, (int) (currentSetpoint.f * 100.0));
         } else
         {
-          SendMotorCommand((FloatBytes_t) 0.0f, velocitySetpoint);
+          currentSetpoint.f = regen_state ? 1.0f : 0.0f;
+          SendMotorCommand(currentSetpoint, velocitySetpoint);
           printf("0x%lX, %d\r\n", pedal, 0);
         }
       }
