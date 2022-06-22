@@ -33,8 +33,8 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // POT
-#define PEDAL_MIN (0x5FFF * 10)
-#define PEDAL_MAX (0x6B00 * 10)
+#define PEDAL_MIN (0x36000)
+#define PEDAL_MAX (0x3B500)
 
 // PED
 // #define PEDAL_MIN 0x0975
@@ -88,6 +88,7 @@ static void SendMotorCommand(FloatBytes_t currentSetpoint, FloatBytes_t velocity
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 static volatile uint16_t adcBuf[ADC_BUF_SIZE] = {0};
+static uint8_t regen_state;
 
 static CAN_TxHeaderTypeDef speedCommandCanHeader = {
     0x0401,       // CAN ID
@@ -179,7 +180,12 @@ int main(void)
     if(DataCollect_Poll() == ADC1_RESULTS_STORED)
     {
       DataCollect_Get(&pedal);
-      velocitySetpoint.f = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin) ? -10.0 : 10.0;
+      regen_state = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
+
+      if (regen_state)
+        velocitySetpoint.f = 0;
+      else
+        velocitySetpoint.f = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin) ? -10.0 : 10.0;
 
       if (pedal > PEDAL_OVERFLOW)
       {
@@ -191,7 +197,7 @@ int main(void)
         if (pedal > PEDAL_MIN)
         {
           // Map pedal value to percentage of full current
-          currentSetpoint.f = ((float)(pedal - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
+          currentSetpoint.f = regen_state ? 1.0f : ((float)(pedal - PEDAL_MIN)) / (PEDAL_MAX - PEDAL_MIN);
 
           // Fix target current between 0-1
           if (currentSetpoint.f > 1.0f)
@@ -503,11 +509,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin : RVRS_EN_Pin */
-  GPIO_InitStruct.Pin = RVRS_EN_Pin;
+  /*Configure GPIO pins : RVRS_EN_Pin REGEN_EN_Pin */
+  GPIO_InitStruct.Pin = RVRS_EN_Pin|REGEN_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(RVRS_EN_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : POT_INA10_Pin */
   GPIO_InitStruct.Pin = POT_INA10_Pin;
