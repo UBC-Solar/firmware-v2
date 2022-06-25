@@ -227,44 +227,18 @@ static void sm_State11Handler(void)
 //
 static void sm_FltCheck(void)
 {
-	static uint8_t faultCounter1 = 0u;
-	static uint8_t faultCounter2 = 0u;
 	GPIO_PinState st1 = HAL_GPIO_ReadPin(GPIOA, FLT_IN_Pin);
 	GPIO_PinState st2 =	HAL_GPIO_ReadPin(GPIOB, ESTOP_IN_Pin);
 
 	//something's wrong when estop_in or flt_in is pulled to gnd
 	if (st1 == GPIO_PIN_SET)
 	{
-		//do some de-bouncing, give it three chances
-		if(faultCounter1 >= SM_FLT_MAX_COUNTER_VAL)
-		{
-			SM_SetStatusFlag(SM_STATUS_FLT_FLAG);
-		}
-		else
-		{
-			faultCounter1++;
-		}
-	}
-	else
-	{
-		faultCounter1 = 0u;
+		SM_SetStatusFlag(SM_STATUS_FLT_FLAG);
 	}
 
-	if (st2 == GPIO_PIN_SET)
+	else if (st2 == GPIO_PIN_SET)
 	{
-		//do some de-bouncing, give it three chances
-		if(faultCounter2 >= SM_FLT_MAX_COUNTER_VAL)
-		{
-			SM_SetStatusFlag(SM_STATUS_FLT_FLAG);
-		}
-		else
-		{
-			faultCounter2++;
-		}
-	}
-	else
-	{
-		faultCounter2 = 0u;
+		SM_SetStatusFlag(SM_STATUS_FLT_FLAG);
 	}
 }
 
