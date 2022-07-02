@@ -150,6 +150,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+  HAL_Delay(5000);
 
   /* USER CODE END SysInit */
 
@@ -166,9 +167,13 @@ int main(void)
   printf("RESTART!\r\n");
   //HAL_TIM_Base_Start_IT(&htim2);
   //HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
-  HAL_CAN_Start(&hcan);
+  while(HAL_CAN_Start(&hcan) != HAL_OK)
+    HAL_Delay(100);
+  printf("CAN INIT");
+
   DataCollect_PrepareHardware(&hadc1);
   DataCollect_Start(&htim3);
+  printf("ADC INIT");
   /* USER CODE END 2 */
 
   /* Infinite loop */
