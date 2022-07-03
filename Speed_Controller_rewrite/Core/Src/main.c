@@ -33,12 +33,10 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // POT
-#define PEDAL_MIN (0x5FFF * 10)
-#define PEDAL_MAX (0x6B00 * 10)
+#define PEDAL_MIN (0x36000)
+#define PEDAL_MAX (0x3B400)
 
-// PED
-// #define PEDAL_MIN 0x0975
-// #define PEDAL_MAX 0x0A70
+// STATE FREE ERROR RAW CURR
 
 #define PEDAL_OVERFLOW (0x7000 * 10)
 
@@ -119,7 +117,13 @@ static void SendMotorCommand(FloatBytes_t currentSetpoint, FloatBytes_t velocity
   data[6] = currentSetpoint.b[2];
   data[7] = currentSetpoint.b[3];
 
-  HAL_CAN_AddTxMessage(&hcan, &speedCommandCanHeader, data, &mailbox);
+  if(HAL_CAN_GetTxMailboxesFreeLevel(&hcan) <= 0) {
+    printf("Mailbox full! ");
+  } else {
+    HAL_CAN_AddTxMessage(&hcan, &speedCommandCanHeader, data, &mailbox);
+    printf("0x%x, 0x%lx, 0x%lx, ", HAL_CAN_GetState(&hcan), HAL_CAN_GetTxMailboxesFreeLevel(&hcan), HAL_CAN_GetError(&hcan));  
+  }
+
 }
 
 /* USER CODE END 0 */
