@@ -129,6 +129,8 @@ static void SendMotorCommand(FloatBytes_t currentSetpoint, FloatBytes_t velocity
 
 /* USER CODE END 0 */
 
+// TODO: fix device failing to power on correctly at vehicle startup
+
 /**
   * @brief  The application entry point.
   * @retval int
