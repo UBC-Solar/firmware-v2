@@ -115,7 +115,7 @@ static void SendMotorCommand(FloatBytes_t currentSetpoint, FloatBytes_t velocity
   data[4] = currentSetpoint.b[0];
   data[5] = currentSetpoint.b[1];
   data[6] = currentSetpoint.b[2];
-  data[7] = currentSetpoint.b[3];
+  data[7] = currentSetpoint.b [3];
 
   if(HAL_CAN_GetTxMailboxesFreeLevel(&hcan) <= 0) {
     printf("Mailbox full! ");
@@ -205,7 +205,7 @@ int main(void)
           printf("0x%lX, %d\r\n", pedal, (int) (currentSetpoint.f * 100.0));
         } else
         {
-          SendMotorCommand((FloatBytes_t) 0.0f, velocitySetpoint);
+          SendMotorCommand(currentSetpoint, velocitySetpoint);
           printf("0x%lX, %d\r\n", pedal, 0);
         }
       }
