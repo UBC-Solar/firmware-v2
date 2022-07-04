@@ -118,7 +118,7 @@ static void SendMotorCommand(FloatBytes_t currentSetpoint, FloatBytes_t velocity
   data[4] = currentSetpoint.b[0];
   data[5] = currentSetpoint.b[1];
   data[6] = currentSetpoint.b[2];
-  data[7] = currentSetpoint.b[3];
+  data[7] = currentSetpoint.b [3];
 
   HAL_CAN_AddTxMessage(&hcan, &speedCommandCanHeader, data, &mailbox);
 }
@@ -186,11 +186,7 @@ int main(void)
     {
       DataCollect_Get(&pedal);
       regen_state = HAL_GPIO_ReadPin(REGEN_EN_GPIO_Port, REGEN_EN_Pin);
-
-      if (regen_state)
-        velocitySetpoint.f = 0;
-      else
-        velocitySetpoint.f = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin) ? -10.0 : 10.0;
+      velocitySetpoint.f = HAL_GPIO_ReadPin(RVRS_EN_GPIO_Port, RVRS_EN_Pin) ? -10.0 : 10.0;
 
       if (pedal > PEDAL_OVERFLOW)
       {
@@ -213,6 +209,7 @@ int main(void)
         } else
         {
           currentSetpoint.f = regen_state ? 1.0f : 0.0f;
+          velocitySetpoint.f = 0;
           SendMotorCommand(currentSetpoint, velocitySetpoint);
           printf("0x%lX, %d\r\n", pedal, 0);
         }
