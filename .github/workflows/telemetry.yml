@@ -2,9 +2,10 @@ name: Telemetry CI
 
 on:
   push:
-    branches: [ "telemetry" ]
+    branches: [ "master", "telemetry" ]
   pull_request:
     branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -16,7 +17,7 @@ jobs:
     - name: Install toolchain (arm-none-eabi)
       run: sudo apt-get update && sudo apt-get install gcc-arm-none-eabi
     - name: Build debug target
-      run: cd Telemetry/Debug/ && make -j8 all && arm-none-eabi-objcopy -O binary telemetry.elf telemetry.bin
+      run: cd Telemetry/Debug/ && make -j$(nproc) all && arm-none-eabi-objcopy -O binary telemetry.elf telemetry.bin
       
     - name: Get branch name and commit hash
       run: |
