@@ -267,9 +267,7 @@ __NO_RETURN void transmitMessageTask(void *argument) {
     uint8_t newline[1] = "\n";
     HAL_UART_Transmit(&huart3, newline, sizeof(newline), 1000);
 
-    // CARRIAGE RETURN: 1 ASCII character
-    uint8_t carriage[1] = "\r";
-    HAL_UART_Transmit(&huart3, carriage, sizeof(carriage), 1000);
+    // TOTAL MESSAGE SIZE: 30 ASCII chars (30 bytes)
   }
 }
 
