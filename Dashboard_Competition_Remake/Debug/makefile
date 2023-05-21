@@ -60,8 +60,8 @@ all: main-build
 main-build: Dashboard_Competition_Remake.elf secondary-outputs
 
 # Tool invocations
-Dashboard_Competition_Remake.elf Dashboard_Competition_Remake.map: $(OBJS) $(USER_OBJS) C:\Code\Solar\Legacy-Daybreak-Firmware\STM-remake\STM32F103RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Dashboard_Competition_Remake.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Code\Solar\Legacy-Daybreak-Firmware\STM-remake\STM32F103RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Dashboard_Competition_Remake.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Dashboard_Competition_Remake.elf Dashboard_Competition_Remake.map: $(OBJS) $(USER_OBJS) C:\Users\ishan\OneDrive\School\UBC\UBC\ Solar\DID\Firmware-v2\Dashboard_Competition_Remake\STM32F103RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Dashboard_Competition_Remake.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\ishan\OneDrive\School\UBC\UBC Solar\DID\Firmware-v2\Dashboard_Competition_Remake\STM32F103RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Dashboard_Competition_Remake.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
