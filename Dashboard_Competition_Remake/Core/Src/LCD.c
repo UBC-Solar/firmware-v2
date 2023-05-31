@@ -361,6 +361,7 @@ void DisplayScreen(void)
  * @Param pageNum: The current page number
  */
 void UpdateScreenTitles(uint8_t pageNum) {
+	ClearScreen();
 	switch(pageNum)
 	{
 		case PAGE_0:
@@ -529,6 +530,7 @@ void ScreenSetup(void)
         TransmitCommandParameter(0x7);
 
     CharacterBitMaps();
-	DisplayScreen();
+    ClearScreen();
+//	DisplayScreen();
 
 }
