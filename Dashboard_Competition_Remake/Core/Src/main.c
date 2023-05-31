@@ -24,6 +24,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "LCD.h"
+#include <time.h>
+
 
 /* USER CODE END Includes */
 
@@ -47,6 +49,14 @@
 #define ARR_BASE 0x700
 
 #define FILTER_LEN 9
+
+#define NUM_PAGES 4
+#define PAGE_0 0
+#define PAGE_1 1
+#define PAGE_2 2
+#define PAGE_3 3
+
+#define TIMEOUT 10
 
 /* USER CODE END PM */
 
@@ -131,6 +141,43 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
+  /*
+   * Page Layout
+   * Page 0: Main Page
+   * Page 1: Warnings
+   * Page 2: Current Summary
+   * Page 3: Pack Summary (Voltage + Temperature)
+   */
+
+  uint16_t CAN_messages_by_page = {{4, // Num of items
+		  	  	  	  	  	  	    0x624, // SOC
+  	  	  	  	  	  	  	  	  	// cruise,
+		  	  	  	  	  	  	  	0x503 // Vehicle Velocity
+									// regen % (new message required)
+  	  	  	  	  	  	  	  	  	}, // Page 0: Main
+  	  	  	  	  	  	  	  	  {}, // Page 1: Warnings
+  	  	  	  	  	  	  	  	  {3, // Num of items
+  	  	  	  	  	  	  	  	   0x501 // Motor current
+  	  	  	  	  	  	  	  	   // array current
+  	  	  	  	  	  	  	  	   // low voltage current
+  	  	  	  	  	  	  	  	  }, // Page 2: Current Summary
+  	  	  	  	  	  	  	  	  {2, // num of items
+  	  	  	  	  	  	  	  	    0x625, // pack temperature
+  	  	  	  	  	  	  	  		0x623 // voltage
+  	  	  	  	  	  	  	  	  }}; // Page 3: Pack Summary
+
+  // Page initialized to Page 0
+  uint8_t current_page = 0;
+
+  // Timers
+  time_t startTime;
+  time_t currentTime;
+
+  // Set start time
+  time(&startTime);
+
+  uint8_t check_time = FALSE;
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -186,8 +233,142 @@ int main(void)
 	// Check if message is available
 	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
 	{
-		// Populate CAN header and data variables
+		// Populate CAN header and data variables (CAN_rx_header/data is updated respectively)
 		HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
+
+		uint16_t curr_CAN_ID = (uint16_t) CAN_rx_header.StdID;
+
+		// Check which page the can message belongs to
+		message_on_current_page = FALSE;
+		uint8_t curr_msg_page = 0xFF; // will change if the message is found
+
+		for (int i = 0; i < NUM_PAGES; i++) {
+			// Obtain length of sub array (first element of sub array is the length)
+			uint16_t subarr_len = CAN_messages_by_page[i][0];
+			for (int j = 1; j < subarr_len; j++) {
+				// Check if the message is found on the current page
+				if ((uint16_t) curr_CAN_ID == CAN_messages_by_page[i][j]) {
+					message_on_current_page = TRUE;
+					curr_msg_page = i;
+					break;
+				}
+			}
+			if (message_on_current_page) {
+				// message is found
+				break;
+			}
+		}
+
+		/* Add Check for CAN message that is incoming to change the page
+		 * This CAN message comes from the MCB
+		 * The current_page is simply incremented by +1.
+		 * if (current_page + 1 == NUM_PAGES) set current_page = 0
+		 */
+
+
+		// Switch by page
+		// If parsed message is not on the current page, it is ignored
+		switch(current_page)
+		{
+			case PAGE_0: // main page
+				UpdateScreenTitles(PAGE_0);
+				switch(curr_CAN_ID)
+				{
+					case (BATT_BASE + 4): // SOC
+						UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (int8_t) CAN_rx_data[0], 0);
+						// Add UNIT "%"
+						break;
+					// case CRUISE_TARGET:
+					case (MC_BASE + 3): // Vehicle Velocity
+						u.chars[0] = CAN_rx_data[4];
+						u.chars[1] = CAN_rx_data[5];
+						u.chars[2] = CAN_rx_data[6];
+						u.chars[3] = CAN_rx_data[7];
+
+						u.float_var = u.float_var * -3.6;
+						tempInt32 = (int32_t) u.float_var;
+
+						if (u.float_var < 0)
+						{
+							u.float_var = u.float_var * -1;
+						}
+
+						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10);
+						break;
+					//case REGEN_%:
+					default:
+						// Can message read is not part of the current page, Ignore.
+						break;
+
+				}
+				break;
+			case PAGE_1: // warnings
+				UpdateScreenTitles(PAGE_1);
+				if (check_time == FALSE) {
+					// start timer
+					// Only needs this condition in PAGE_1 because we have to go by PAGE_1 to get to other pages
+					time(&startTime);
+					check_time = TRUE;
+				} else {
+					// check_time == TRUE
+					time(&currentTime);
+					if (currentTime - startTime > TIMEOUT ) {
+						current_page = PAGE_0; // TIMEOUT has occurred --> Reset to Main Page
+						check_time = FALSE;
+					}
+				}
+				switch(curr_CAN_ID)
+				{
+					default:
+						// Can message read is not part of the current page, Ignore.
+						break;
+				}
+
+				break;
+			case PAGE_2: // Current Summary
+				UpdateScreenTitles(PAGE_2);
+				if (check_time == TRUE) {
+					time(&currentTime);
+					if (currentTime - startTime > TIMEOUT ) {
+						current_page = PAGE_0; // TIMEOUT has occurred --> Reset to Main Page
+						check_time = FALSE;
+					} else {
+						time(&startTime); // reset timer
+					}
+				}
+				switch(curr_CAN_ID)
+				{
+					default:
+						// Can message read is not part of the current page, Ignore.
+						break;
+				}
+				break;
+			case PAGE_3: // Pack Summary (Voltage + Temperature)
+				UpdateScreenTitles(PAGE_3);
+				if (check_time == TRUE) {
+					time(&currentTime);
+					if (currentTime - startTime > TIMEOUT ) {
+						current_page = PAGE_0; // TIMEOUT has occurred --> Reset to Main Page
+						check_time = FALSE;
+					} else {
+						time(&startTime); // reset timer
+					}
+				}
+				switch(curr_CAN_ID)
+				{
+					default:
+						// Can message read is not part of the current page, Ignore.
+						break;
+				}
+				break;
+			default:
+				// Ignore CAN message as it is not on the current page
+				// Can add a print statement here for debugging
+				break;
+		}
+
+
+
 
 		// Switch statement based on CAN ID - E.g. BATT_BASE = 620
 		switch(CAN_rx_header.StdId)

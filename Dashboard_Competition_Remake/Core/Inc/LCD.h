@@ -15,57 +15,99 @@ Header file containing all constants and function declarations to the LCD
 #define OFFSET_CAPITAL 65
 #define OFFSET_LOWCASE 97
 
+/****************************
+ ** DECLARE DATA POSITIONS **
+ * **************************/
+
+/* See Display_Horizontal_Character_Numbering.jpg in Brightside/BS Software/BS DID/ for how numbering works */
+
+/* Page 0 */
+// SOC
+#define SOC_XPOS 0
+#define SOC_YPOS 0
+#define SOC_DATA_XPOS 7 // check
+#define SOC_DATA_YPOS 0
+// Cruise Control Set
+#define CRUISE_XPOS 0
+#define CRUISE_YPOS 3
+#define CRUISE_DATA_XPOS 7 // check
+#define CRUISE_DATA_YPOS 3
+// Vehicle Velocity (Motor Speed)
+#define SPEED_XPOS 0
+#define SPEED_YPOS 6
+#define SPEED_DATA_XPOS 7 // check
+#define SPEED_DATA_YPOS 6
+// Regen
+#define REGEN_XPOS 0
+#define REGEN_YPOS 9
+#define REGEN_DATA_XPOS 7 // check
+#define REGEN_DATA_YPOS 9
+
+/* Page 1 */
+
+/* Page 2 */
+
+/* Page 3 */
+
+
+/* Other Definitions */
+#define PAGE_0 0
+#define PAGE_1 1
+#define PAGE_2 2
+#define PAGE_3 3
+
+
 //COLUMN 1
 
-#define BATTERY_CURRENT_XPOS 0
-#define BATTERY_CURRENT_YPOS 0
-#define BATTERY_CURRENT_UNIT_XPOS 18
-#define BATTERY_CURRENT_UNIT_YPOS 0
-
-#define BATTERY_VOLTAGE_XPOS 0
-#define BATTERY_VOLTAGE_YPOS 3
-#define BATTERY_VOLTAGE_UNIT_XPOS 18
-#define BATTERY_VOLTAGE_UNIT_YPOS 3
-
-#define MOTOR_CURRENT_XPOS 0
-#define MOTOR_CURRENT_YPOS 6
-#define MOTOR_CURRENT_UNIT_XPOS 18
-#define MOTOR_CURRENT_UNIT_YPOS 6
-
-#define MOTOR_TEMP_XPOS 0
-#define MOTOR_TEMP_YPOS 9
-#define MOTOR_TEMP_UNIT_XPOS 18
-#define MOTOR_TEMP_UNIT_YPOS 9
-
-#define MOTOR_SPEED_XPOS 0
-#define MOTOR_SPEED_YPOS 12
-#define MOTOR_SPEED_UNIT_XPOS 18
-#define MOTOR_SPEED_UNIT_YPOS 12
+//#define BATTERY_CURRENT_XPOS 0
+//#define BATTERY_CURRENT_YPOS 0
+//#define BATTERY_CURRENT_UNIT_XPOS 18
+//#define BATTERY_CURRENT_UNIT_YPOS 0
+//
+//#define BATTERY_VOLTAGE_XPOS 0
+//#define BATTERY_VOLTAGE_YPOS 3
+//#define BATTERY_VOLTAGE_UNIT_XPOS 18
+//#define BATTERY_VOLTAGE_UNIT_YPOS 3
+//
+//#define MOTOR_CURRENT_XPOS 0
+//#define MOTOR_CURRENT_YPOS 6
+//#define MOTOR_CURRENT_UNIT_XPOS 18
+//#define MOTOR_CURRENT_UNIT_YPOS 6
+//
+//#define MOTOR_TEMP_XPOS 0
+//#define MOTOR_TEMP_YPOS 9
+//#define MOTOR_TEMP_UNIT_XPOS 18
+//#define MOTOR_TEMP_UNIT_YPOS 9
+//
+//#define MOTOR_SPEED_XPOS 0
+//#define MOTOR_SPEED_YPOS 12
+//#define MOTOR_SPEED_UNIT_XPOS 18
+//#define MOTOR_SPEED_UNIT_YPOS 12
 
 //COLUMN 2
 
-#define BATTERY_MINVOLT_XPOS 20
-#define BATTERY_MINVOLT_YPOS 0
-#define BATTERY_MINVOLT_UNIT_XPOS 37
-#define BATTERY_MINVOLT_UNIT_YPOS 0
-
-#define BATTERY_MAXVOLT_XPOS 20
-#define BATTERY_MAXVOLT_YPOS 3
-#define BATTERY_MAXVOLT_UNIT_XPOS 37
-#define BATTERY_MAXVOLT_UNIT_YPOS 3
-
-#define BATTERY_SUPPVOLT_XPOS 20
-#define BATTERY_SUPPVOLT_YPOS 6
-#define BATTERY_SUPPVOLT_UNIT_XPOS 37
-#define BATTERY_SUPPVOLT_UNIT_YPOS 6
-
-#define BATTERY_MAXTEMP_XPOS 20
-#define BATTERY_MAXTEMP_YPOS 9
-#define BATTERY_MAXTEMP_UNIT_XPOS 37
-#define BATTERY_MAXTEMP_UNIT_YPOS 9
-
-#define BATTERY_CHARGE_XPOS 22
-#define BATTERY_CHARGE_YPOS 12
+//#define BATTERY_MINVOLT_XPOS 20
+//#define BATTERY_MINVOLT_YPOS 0
+//#define BATTERY_MINVOLT_UNIT_XPOS 37
+//#define BATTERY_MINVOLT_UNIT_YPOS 0
+//
+//#define BATTERY_MAXVOLT_XPOS 20
+//#define BATTERY_MAXVOLT_YPOS 3
+//#define BATTERY_MAXVOLT_UNIT_XPOS 37
+//#define BATTERY_MAXVOLT_UNIT_YPOS 3
+//
+//#define BATTERY_SUPPVOLT_XPOS 20
+//#define BATTERY_SUPPVOLT_YPOS 6
+//#define BATTERY_SUPPVOLT_UNIT_XPOS 37
+//#define BATTERY_SUPPVOLT_UNIT_YPOS 6
+//
+//#define BATTERY_MAXTEMP_XPOS 20
+//#define BATTERY_MAXTEMP_YPOS 9
+//#define BATTERY_MAXTEMP_UNIT_XPOS 37
+//#define BATTERY_MAXTEMP_UNIT_YPOS 9
+//
+//#define BATTERY_CHARGE_XPOS 22
+//#define BATTERY_CHARGE_YPOS 12
 
 //DEPRECATED
 #define ARRAY_MAXTEMP_XPOS 20
@@ -137,6 +179,13 @@ void ScreenSetup(void);
  * Initialise GPIO Pins C0 to C12 for output
  */
 void InitialiseLCDPins(void);
+
+/**
+ * Updates Screen Titles depending on current page number
+ * @Param pageNum: The current page number
+ */
+void UpdateScreenTitles(uint8_t pageNum);
+
 /**
  * Erases and revalues a single value field on a screen
  * @Param x: The x value of the parameter on the screen

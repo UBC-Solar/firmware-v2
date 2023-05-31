@@ -357,6 +357,31 @@ void DisplayScreen(void)
 }
 
 /**
+ * Updates Screen Titles depending on current page number
+ * @Param pageNum: The current page number
+ */
+void UpdateScreenTitles(uint8_t pageNum) {
+	switch(pageNum)
+	{
+		case PAGE_0:
+			OutputString("SOC", SOC_XPOS, SOC_YPOS);
+			OutputString("CRUISE", CRUISE_XPOS, CRUISE_YPOS);
+			OutputString("SPEED", SPEED_XPOS, SPEED_YPOS);
+			OutputString("REGEN", REGEN_XPOS, REGEN_YPOS);
+			break;
+		case PAGE_1:
+			break;
+		case PAGE_2:
+			break;
+		case PAGE_3:
+			break;
+		default:
+			// ERROR print statement (Should not occur!)
+			break;
+	}
+}
+
+/**
  * Erases and revalues a single value field on a screen
  * @Param x: The x value of the parameter on the screen
  * @Param y: The y value of the parameter on the screen
