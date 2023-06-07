@@ -365,16 +365,30 @@ void UpdateScreenTitles(uint8_t pageNum) {
 	switch(pageNum)
 	{
 		case PAGE_0:
+			/* Titles */
 			OutputString("SOC", SOC_XPOS, SOC_YPOS);
 			OutputString("CRUISE", CRUISE_XPOS, CRUISE_YPOS);
 			OutputString("SPEED", SPEED_XPOS, SPEED_YPOS);
 			OutputString("REGEN", REGEN_XPOS, REGEN_YPOS);
+			/* Units */
+			OutputString("%", SOC_UNIT_XPOS, SOC_UNIT_YPOS);
+			OutputString("KMH", CRUISE_UNIT_XPOS, CRUISE_UNIT_YPOS);
+			OutputString("KMH", SPEED_UNIT_XPOS, SPEED_UNIT_YPOS);
+			OutputString("%", REGEN_UNIT_XPOS, REGEN_UNIT_YPOS);
 			break;
 		case PAGE_1:
 			break;
 		case PAGE_2:
+			OutputString("M_CURRENT", SOC_XPOS, SOC_YPOS);
+			OutputString("A_CURRENT", CRUISE_XPOS, CRUISE_YPOS);
+			OutputString("LV_CURRENT", SPEED_XPOS, SPEED_YPOS);
+			OutputString("NET_CURR", REGEN_XPOS, REGEN_YPOS);
 			break;
 		case PAGE_3:
+			OutputString("PACK_TEMP", SOC_XPOS, SOC_YPOS);
+			OutputString("PACK_VOLT", CRUISE_XPOS, CRUISE_YPOS);
+			OutputString("CELL_LV", SPEED_XPOS, SPEED_YPOS);
+			OutputString("CELL_HV", REGEN_XPOS, REGEN_YPOS);
 			break;
 		default:
 			// ERROR print statement (Should not occur!)

@@ -1,4 +1,4 @@
 main.c:102:6:InitLEDs	1
-main.c:127:5:main	22
-main.c:604:6:SystemClock_Config	3
-main.c:646:6:Error_Handler	1
+main.c:127:5:main	2
+main.c:574:6:SystemClock_Config	3
+main.c:616:6:Error_Handler	1

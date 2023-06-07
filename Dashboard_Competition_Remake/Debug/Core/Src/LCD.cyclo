@@ -8,10 +8,10 @@ LCD.c:140:6:OutputString	9
 LCD.c:232:6:OutputPaddedInteger	5
 LCD.c:277:6:SetBar	4
 LCD.c:300:6:DisplayScreen	1
-LCD.c:363:6:UpdateScreenTitles	2
-LCD.c:392:6:UpdateScreenParameter	1
-LCD.c:406:6:WriteByteToDataBus	1
-LCD.c:417:6:TransmitCommand	1
-LCD.c:432:6:TransmitCommandParameter	1
-LCD.c:445:6:InitialiseLCDPins	1
-LCD.c:470:6:ScreenSetup	1
+LCD.c:363:6:UpdateScreenTitles	4
+LCD.c:406:6:UpdateScreenParameter	1
+LCD.c:420:6:WriteByteToDataBus	1
+LCD.c:431:6:TransmitCommand	1
+LCD.c:446:6:TransmitCommandParameter	1
+LCD.c:459:6:InitialiseLCDPins	1
+LCD.c:484:6:ScreenSetup	1
