@@ -1,5 +1,8 @@
 #include "LCD.h"
 
+#define TRUE 1
+#define FALSE 0
+
 /**
  * A Delay with a value of ~1ms
  * @Param counts: Number of milliseconds
@@ -225,11 +228,12 @@ void OutputString(char Str[], uint8_t starting_x, uint8_t starting_y)
  * The output can take any value from '-999.9' to ' 999.9'
  * @Param num: The integer portion of the number to be displayed
  * @Param dec: The decimal portion of the number to be displayed
+ * @param decimal_en: 1 if decimal should be included; 0 otherwise.
  * @Param x: x-coordinate to write the character
  * @Param y: y-coordinate to write the character
  * Returns: nothing
  */
-void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y)
+void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t decimal_en, uint8_t x, uint8_t y)
 {
 	uint8_t i;
     char str[5] = {' ',' ',' ',' ','\0'};
@@ -237,7 +241,8 @@ void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y)
 
     if (num < 0)
     {
-        str[0] = '-';
+    	if (num > -99) str[1] = '-'; // make negative closer to number if only 2 digits
+    	else str[0] = '-';
         num = -1 * num;
     }
 	else if (num == 0)
@@ -257,6 +262,9 @@ void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y)
     }
 
     OutputString(str, x, y);
+
+    // If decimal_en = 0, skip decimal output
+    if (!decimal_en) return;
 
     //Output 1 decimal place
     OutputString(".", x + 12, y);
@@ -361,37 +369,49 @@ void DisplayScreen(void)
  * @Param pageNum: The current page number
  */
 void UpdateScreenTitles(uint8_t pageNum) {
-	ClearScreen();
 	switch(pageNum)
 	{
 		case PAGE_0:
 			/* Titles */
 			OutputString("SOC", SOC_XPOS, SOC_YPOS);
-			OutputString("CRUISE", CRUISE_XPOS, CRUISE_YPOS);
+			OutputString("CRUZE", CRUISE_XPOS, CRUISE_YPOS);
 			OutputString("SPEED", SPEED_XPOS, SPEED_YPOS);
 			OutputString("REGEN", REGEN_XPOS, REGEN_YPOS);
 			/* Units */
 			OutputString("%", SOC_UNIT_XPOS, SOC_UNIT_YPOS);
-			OutputString("KMH", CRUISE_UNIT_XPOS, CRUISE_UNIT_YPOS);
-			OutputString("KMH", SPEED_UNIT_XPOS, SPEED_UNIT_YPOS);
+			OutputString("KM", CRUISE_UNIT_XPOS, CRUISE_UNIT_YPOS);
+			OutputString("KM", SPEED_UNIT_XPOS, SPEED_UNIT_YPOS);
 			OutputString("%", REGEN_UNIT_XPOS, REGEN_UNIT_YPOS);
 			break;
 		case PAGE_1:
 			break;
 		case PAGE_2:
-			OutputString("M_CURRENT", SOC_XPOS, SOC_YPOS);
-			OutputString("A_CURRENT", CRUISE_XPOS, CRUISE_YPOS);
-			OutputString("LV_CURRENT", SPEED_XPOS, SPEED_YPOS);
-			OutputString("NET_CURR", REGEN_XPOS, REGEN_YPOS);
+			/* Titles */
+			OutputString("MTR_C", MOTOR_CURRENT_XPOS, MOTOR_CURRENT_YPOS);
+			OutputString("ARR_C", ARRAY_CURRENT_XPOS, ARRAY_CURRENT_YPOS);
+			OutputString("LV_C", LV_CURRENT_XPOS, LV_CURRENT_YPOS);
+			OutputString("BUS_C", BUS_CURRENT_XPOS, BUS_CURRENT_YPOS);
+			/* Units */
+			OutputString("%", MOTOR_CURRENT_UNIT_XPOS, MOTOR_CURRENT_UNIT_YPOS);
+			OutputString("A", ARRAY_CURRENT_UNIT_XPOS, ARRAY_CURRENT_UNIT_YPOS);
+			OutputString("A", LV_CURRENT_UNIT_XPOS, LV_CURRENT_UNIT_YPOS);
+			OutputString("%", BUS_CURRENT_UNIT_XPOS, BUS_CURRENT_UNIT_YPOS);
 			break;
 		case PAGE_3:
-			OutputString("PACK_TEMP", SOC_XPOS, SOC_YPOS);
-			OutputString("PACK_VOLT", CRUISE_XPOS, CRUISE_YPOS);
-			OutputString("CELL_LV", SPEED_XPOS, SPEED_YPOS);
-			OutputString("CELL_HV", REGEN_XPOS, REGEN_YPOS);
+			/* Titles */
+			OutputString("PK_T", PACK_TEMP_XPOS, PACK_TEMP_YPOS);
+			OutputString("PK_V", PACK_VOLT_XPOS, PACK_VOLT_YPOS);
+			OutputString("CL_LV", CELL_LV_XPOS, CELL_LV_YPOS);
+			OutputString("CL_HV", CELL_HV_XPOS, CELL_HV_YPOS);
+			/* Units */
+			OutputString("C", PACK_TEMP_UNIT_XPOS, PACK_TEMP_UNIT_YPOS);
+			OutputString("V", PACK_VOLT_UNIT_XPOS, PACK_VOLT_UNIT_XPOS);
+			OutputString("V", CELL_LV_UNIT_XPOS, CELL_LV_UNIT_YPOS);
+			OutputString("V", CELL_HV_UNIT_XPOS, CELL_HV_UNIT_YPOS);
 			break;
 		default:
-			// ERROR print statement (Should not occur!)
+			// Clear Screen
+			ClearScreen();
 			break;
 	}
 }
@@ -402,14 +422,15 @@ void UpdateScreenTitles(uint8_t pageNum) {
  * @Param y: The y value of the parameter on the screen
  * @Param integerValue: The integer value of the parameter(Between -999 to 999)
  * @Param decValue: The decimal component of the parameter
+ * @param decimal_en: 1 if decimal should be included; 0 otherwise.
  */
-void UpdateScreenParameter(uint8_t x, uint8_t y, int32_t integerValue, uint8_t decValue)
+void UpdateScreenParameter(uint8_t x, uint8_t y, int32_t integerValue, uint8_t decValue, uint8_t decimal_en)
 {
 	//Clear a 6 x 2 rectangle to erase the previous number
 	OutputString("     ", x, y);
 
 	//Insert the new number
-	OutputPaddedInteger(integerValue, decValue, x, y);
+	OutputPaddedInteger(integerValue, decValue, decimal_en, x, y);
 }
 
 /**

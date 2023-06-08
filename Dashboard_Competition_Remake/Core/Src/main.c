@@ -47,6 +47,11 @@
 #define MC_BASE 0x500
 #define BATT_BASE 0x620
 #define ARR_BASE 0x700
+#define MCB_BASE 0x400
+#define LV_BASE 0x450
+
+#define CRUISE_TARGET 234 // Placeholder values
+#define REGEN 543 // Placeholder values
 
 #define FILTER_LEN 9
 
@@ -149,23 +154,6 @@ int main(void)
    * Page 3: Pack Summary (Voltage + Temperature)
    */
 
-  uint16_t CAN_messages_by_page = {{4, // Num of items
-		  	  	  	  	  	  	    0x624, // SOC
-  	  	  	  	  	  	  	  	  	// cruise,
-		  	  	  	  	  	  	  	0x503 // Vehicle Velocity
-									// regen % (new message required)
-  	  	  	  	  	  	  	  	  	}, // Page 0: Main
-  	  	  	  	  	  	  	  	  {1}, // Page 1: Warnings
-  	  	  	  	  	  	  	  	  {3, // Num of items
-  	  	  	  	  	  	  	  	   0x501 // Motor current
-  	  	  	  	  	  	  	  	   // array current
-  	  	  	  	  	  	  	  	   // low voltage current
-  	  	  	  	  	  	  	  	  }, // Page 2: Current Summary
-  	  	  	  	  	  	  	  	  {2, // num of items
-  	  	  	  	  	  	  	  	    0x625, // pack temperature
-  	  	  	  	  	  	  	  		0x623 // voltage
-  	  	  	  	  	  	  	  	  }}; // Page 3: Pack Summary
-
   // Page initialized to Page 0
   uint8_t current_page = 0;
 
@@ -222,20 +210,51 @@ int main(void)
 		HAL_Delay(1000);
 
 	// Check if message is available
-//	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
-	if (1)
+	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
 	{
 		// Populate CAN header and data variables (CAN_rx_header/data is updated respectively)
-//		HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
+		HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
 
-//		uint16_t curr_CAN_ID = (uint16_t) CAN_rx_header.StdID;
+		uint16_t received_CAN_ID = (uint16_t) CAN_rx_header.StdId;
+//		uint16_t received_CAN_ID = 0x503;
 
-
-		/* Add Check for CAN message that is incoming to change the page
+		/* Check for CAN message that is incoming to change the page
 		 * This CAN message comes from the MCB
 		 * The current_page is simply incremented by +1.
 		 * if (current_page + 1 == NUM_PAGES) set current_page = 0
 		 */
+
+		uint8_t button_pressed = FALSE;
+		uint8_t cruise_enabled = FALSE;
+
+		if (received_CAN_ID == MCB_BASE)
+		{
+			/* Check for Button Press
+			 * Bit 0 = button press event
+			 * Bit 1 = cruise enabled
+			 */
+			uint8_t mcb_data = CAN_rx_data[0];
+
+			/* For Cruise Enabled:
+			 * - If Enabled, display the cruise velocity on page 1
+			 * - If Disabled, display "OFF" instead of speed
+			 */
+
+			if (mcb_data == 1) { // binary 01
+				button_pressed = TRUE;
+			} else if (mcb_data == 3) { // binary 11
+				button_pressed = TRUE;
+				cruise_enabled = TRUE;
+			} else if (mcb_data == 2){ // binary 10
+				cruise_enabled = TRUE;
+			} // any other cases, don't need to reassign.
+		}
+
+		if (button_pressed) {
+			current_page = current_page + 1; // Increment page
+			if (current_page == NUM_PAGES) current_page = 0; // Reset to 0 if changing from last page
+			button_pressed = FALSE; // Set back to False
+		}
 
 		// Switch by page
 		// If parsed message is not on the current page, it is ignored
@@ -243,321 +262,111 @@ int main(void)
 		{
 			case PAGE_0: // main page
 				UpdateScreenTitles(PAGE_0);
-//				switch(curr_CAN_ID)
-//				{
-//					case (BATT_BASE + 4): // SOC
-//						UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (int8_t) 100, 0);
-////						UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (int8_t) CAN_rx_data[0], 0);
-//						break;
-//					// case CRUISE_TARGET:
-//					case (MC_BASE + 3): // Vehicle Velocity
-//						u.chars[0] = CAN_rx_data[4];
-//						u.chars[1] = CAN_rx_data[5];
-//						u.chars[2] = CAN_rx_data[6];
-//						u.chars[3] = CAN_rx_data[7];
-//
-//						u.float_var = u.float_var * -3.6;
-//						tempInt32 = (int32_t) u.float_var;
-//
-//						if (u.float_var < 0)
-//						{
-//							u.float_var = u.float_var * -1;
-//						}
-//						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, 0, ((uint32_t) 10 * 10) % 10);
-////						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10);
-//						break;
-//					//case REGEN_%:
-//					default:
-//						// Can message read is not part of the current page, Ignore.
-//						break;
-//
-//				}
+				switch(received_CAN_ID)
+				{
+					case (BATT_BASE + 4): // SOC
+//						UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (int8_t) 100, 0, FALSE);
+						UpdateScreenParameter(SOC_DATA_XPOS, SOC_DATA_YPOS, (int8_t) CAN_rx_data[0], 0, FALSE);
+						break;
+					case CRUISE_TARGET: // Change MACRO
+						UpdateScreenParameter(CRUISE_DATA_XPOS, CRUISE_DATA_YPOS, (int8_t) 80, 5, TRUE);
+						// Add data parameter
+						break;
+					case (MC_BASE + 3): // Vehicle Velocity
+						u.chars[0] = CAN_rx_data[4];
+						u.chars[1] = CAN_rx_data[5];
+						u.chars[2] = CAN_rx_data[6];
+						u.chars[3] = CAN_rx_data[7];
+
+						u.float_var = u.float_var * -3.6;
+						tempInt32 = (int32_t) u.float_var;
+
+						if (u.float_var < 0)
+						{
+							u.float_var = u.float_var * -1;
+						}
+//						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, -45, 7, TRUE);
+						UpdateScreenParameter(SPEED_DATA_XPOS, SPEED_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10, TRUE);
+						break;
+					case REGEN: // Change MACRO
+						if (cruise_enabled) UpdateScreenParameter(REGEN_DATA_XPOS, REGEN_DATA_YPOS, 50, 0, FALSE);
+						else {
+							OutputString("     ", REGEN_DATA_XPOS, REGEN_DATA_YPOS); // Clear
+							OutputString("OFF", REGEN_DATA_XPOS, REGEN_DATA_YPOS); // Write "OFF"
+						}
+						break;
+					default:
+						// CAN message read is not part of the current page, Ignore.
+						break;
+
+				}
 				break;
-//			case PAGE_1: // warnings
-//				UpdateScreenTitles(PAGE_1);
-//				if (check_time == FALSE) {
-//					// start timer
-//					// Only needs this condition in PAGE_1 because we have to go by PAGE_1 to get to other pages
-//					time(&startTime);
-//					check_time = TRUE;
-//				} else {
-//					// check_time == TRUE
-//					time(&currentTime);
-//					if (currentTime - startTime > TIMEOUT ) {
-//						current_page = PAGE_0; // TIMEOUT has occurred --> Reset to Main Page
-//						check_time = FALSE;
-//					}
-//				}
-//				switch(curr_CAN_ID)
-//				{
-//					default:
-//						// Can message read is not part of the current page, Ignore.
-//						break;
-//				}
-//
-//				break;
-//			case PAGE_2: // Current Summary
-//				UpdateScreenTitles(PAGE_2);
-//				if (check_time == TRUE) {
-//					time(&currentTime);
-//					if (currentTime - startTime > TIMEOUT ) {
-//						current_page = PAGE_0; // TIMEOUT has occurred --> Reset to Main Page
-//						check_time = FALSE;
-//					} else {
-//						time(&startTime); // reset timer
-//					}
-//				}
-//				switch(curr_CAN_ID)
-//				{
-//					default:
-//						// Can message read is not part of the current page, Ignore.
-//						break;
-//				}
-//				break;
-//			case PAGE_3: // Pack Summary (Voltage + Temperature)
-//				UpdateScreenTitles(PAGE_3);
-//				if (check_time == TRUE) {
-//					time(&currentTime);
-//					if (currentTime - startTime > TIMEOUT ) {
-//						current_page = PAGE_0; // TIMEOUT has occurred --> Reset to Main Page
-//						check_time = FALSE;
-//					} else {
-//						time(&startTime); // reset timer
-//					}
-//				}
-//				switch(curr_CAN_ID)
-//				{
-//					default:
-//						// Can message read is not part of the current page, Ignore.
-//						break;
-//				}
-//				break;
+			case PAGE_1: // warnings
+				UpdateScreenTitles(PAGE_1);
+				switch(received_CAN_ID)
+				{
+					default:
+						// CAN message read is not part of the current page, Ignore.
+						break;
+				}
+
+				break;
+			case PAGE_2: // Current Summary
+				UpdateScreenTitles(PAGE_2);
+				switch(received_CAN_ID)
+				{
+					case (MCB_BASE + 1): // Motor Current
+						// Upper 4 bytes of data
+						u.chars[0] = CAN_rx_data[4];
+						u.chars[1] = CAN_rx_data[5];
+						u.chars[2] = CAN_rx_data[6];
+						u.chars[3] = CAN_rx_data[7];
+						tempInt32 = (int32_t) u.float_var;
+						UpdateScreenParameter(MOTOR_CURRENT_DATA_XPOS, MOTOR_CURRENT_DATA_YPOS, tempInt32, 0, FALSE); // percentage of max current
+						break;
+					case (ARR_BASE + 2): // Array Current
+						// Using Sensor 2 Data
+						// Upper 4 bytes of data
+						u.chars[0] = CAN_rx_data[4];
+						u.chars[1] = CAN_rx_data[5];
+						u.chars[2] = CAN_rx_data[6];
+						u.chars[3] = CAN_rx_data[7];
+						tempInt32 = (int32_t) u.float_var;
+						UpdateScreenParameter(ARRAY_CURRENT_DATA_XPOS, ARRAY_CURRENT_DATA_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10, TRUE); // Float
+						break;
+					case (LV_BASE): // Array Current
+						// Using Sensor 2 Data
+						// 2nd lowest byte
+						UpdateScreenParameter(ARRAY_CURRENT_DATA_XPOS, ARRAY_CURRENT_DATA_YPOS, CAN_rx_data[1], 0, FALSE);
+						break;
+					case (MCB_BASE + 2): // Bus Current
+						// Upper 4 bytes of data
+						u.chars[0] = CAN_rx_data[4];
+						u.chars[1] = CAN_rx_data[5];
+						u.chars[2] = CAN_rx_data[6];
+						u.chars[3] = CAN_rx_data[7];
+						tempInt32 = (int32_t) u.float_var;
+						UpdateScreenParameter(BUS_CURRENT_DATA_XPOS, BUS_CURRENT_DATA_YPOS, tempInt32, 0, FALSE); // percentage of max current
+						break;
+					default:
+						// CAN message read is not part of the current page, Ignore.
+						break;
+				}
+				break;
+			case PAGE_3: // Pack Summary (Voltage + Temperature)
+				UpdateScreenTitles(PAGE_3);
+				switch(received_CAN_ID)
+				{
+					default:
+						// CAN message read is not part of the current page, Ignore.
+						break;
+				}
+				break;
 			default:
-				// Ignore CAN message as it is not on the current page
-				// Can add a print statement here for debugging
+				// Should never reach here.
 				break;
 		}
 
-
-
-
-		// Switch statement based on CAN ID - E.g. BATT_BASE = 620
-//		switch(CAN_rx_header.StdId)
-//		{
-//
-//			//Battery: Pack Voltage(For LCD Display). Values are unsigned 16-bit integers in Volts (V). Period: 1s
-//			//Battery: Minimum Cell Voltage (For LCD Display). Values are unsigned 8-bit integers in 100mv intervals. Period: 1s
-//			//Battery: Maximum Cell Voltage (For LCD Display). Values are unsigned 8-bit integers in 100mv intervals. Period: 1s
-//			case BATT_BASE + 3:
-//				UpdateScreenParameter(BATTERY_VOLTAGE_XPOS, BATTERY_VOLTAGE_YPOS, (uint16_t) (CAN_rx_data[1] | CAN_rx_data[0] << 8), 0);
-//
-//				UpdateScreenParameter(BATTERY_MINVOLT_XPOS, BATTERY_MINVOLT_YPOS, (uint8_t) CAN_rx_data[2] / 10, (uint8_t) CAN_rx_data[2] % 10);
-//
-//				UpdateScreenParameter(BATTERY_MAXVOLT_XPOS, BATTERY_MAXVOLT_YPOS, (uint8_t) CAN_rx_data[4] / 10, (uint8_t) CAN_rx_data[4] % 10);
-//
-//				//XBeeTransmitCan(&CAN_rx_msg);
-//				break;
-//
-//			//Battery: Pack Current(For LCD Display). Values are signed 16-bit integers in Amperes (A). Period: 1s
-//			case BATT_BASE + 4:
-//
-//				UpdateScreenParameter(BATTERY_CURRENT_XPOS, BATTERY_CURRENT_YPOS, (int16_t) (CAN_rx_data[1] | CAN_rx_data[0] << 8), 0);
-//
-//				//XBeeTransmitCan(&CAN_rx_msg);
-//				break;
-//
-//			//Battery: Pack Maximum Temperature (For LCD Display). Values are signed 8-bit integers in Celsius (C). Period: 1s
-//			case BATT_BASE + 7:
-//				UpdateScreenParameter(BATTERY_MAXTEMP_XPOS, BATTERY_MAXTEMP_YPOS, (int8_t) CAN_rx_data[4], 0);
-//
-//				//XBeeTransmitCan(&CAN_rx_msg);
-//				break;
-//
-//			//Battery: State of Charge (For LCD Display). Values are unsigned 8-bit integers. Period: 1s
-//			case BATT_BASE + 6:
-//
-//				UpdateScreenParameter(BATTERY_CHARGE_XPOS, BATTERY_CHARGE_YPOS, (int8_t) CAN_rx_data[0], 0);
-//
-//				//This one is different; it is used to set a battery percentage bar
-//				//SetBar(0xFF & CAN_rx_data[0], 100, CHARGE_BAR_YPOS);
-//
-//				//XBeeTransmitCan(&CAN_rx_msg);
-//				break;
-//
-//			//NOT FULLY IMPLEMENTED
-//			case BATT_BASE + 30:
-//
-//				UpdateScreenParameter(BATTERY_SUPPVOLT_XPOS, BATTERY_SUPPVOLT_YPOS, 0, 0);
-//
-//				break;
-//
-//			//Motor Drive Unit: Speed (For LCD Display). Values are IEEE 32-bit floating point in m/s. Period: 200ms
-//			case MC_BASE + 3:
-//
-//				u.chars[0] = CAN_rx_data[4];
-//				u.chars[1] = CAN_rx_data[5];
-//				u.chars[2] = CAN_rx_data[6];
-//				u.chars[3] = CAN_rx_data[7];
-//
-//				u.float_var = u.float_var * -3.6;
-//				tempInt32 = (int32_t) u.float_var;
-//
-//				if (u.float_var < 0)
-//				{
-//					u.float_var = u.float_var * -1;
-//				}
-//
-//				UpdateScreenParameter(MOTOR_SPEED_XPOS, MOTOR_SPEED_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10 );
-//
-//				//send the CAN message once every second
-//				if (d == 5)
-//				{
-//					//XBeeTransmitCan(&CAN_rx_msg);
-//					d = 0;
-//				}
-//				d++;
-//
-//				break;
-//
-//			//Motor Drive Unit: Temperature (For LCD Display). Values are IEEE 32-bit floating point in Celsius (C). Period: 1s
-//			case MC_BASE + 0xB:
-//
-//
-//				u.chars[0] = CAN_rx_data[0];
-//				u.chars[1] = CAN_rx_data[1];
-//				u.chars[2] = CAN_rx_data[2];
-//				u.chars[3] = CAN_rx_data[3];
-//
-//				tempInt32 = (int32_t) u.float_var;
-//
-//				while(u.float_var < 0)
-//				{
-//					u.float_var = u.float_var * -1;
-//				}
-//
-//				//XBeeTransmitCan(&CAN_rx_msg);
-//
-//				UpdateScreenParameter(MOTOR_TEMP_XPOS, MOTOR_TEMP_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10 );
-//				break;
-//
-//			//Motor Drive Unit: Current (For LCD Display). Values are IEEE 32-bit floating point in Amperes(A). Period: 200ms
-//			case MC_BASE + 2:
-//
-//				u.chars[0] = CAN_rx_data[4];
-//				u.chars[1] = CAN_rx_data[5];
-//				u.chars[2] = CAN_rx_data[6];
-//				u.chars[3] = CAN_rx_data[7];
-//
-//				tempInt32 = (int32_t) u.float_var;
-//
-//				if (u.float_var < 0)
-//				{
-//					u.float_var = u.float_var * -1;
-//				}
-//
-//				//Send the CAN message once every second
-//				if (c == 5)
-//				{
-//					//XBeeTransmitCan(&CAN_rx_msg);
-//					c = 0;
-//				}
-//				c++;
-//
-//				UpdateScreenParameter(MOTOR_CURRENT_XPOS, MOTOR_CURRENT_YPOS, tempInt32, ((uint32_t) (u.float_var * 10)) % 10 );
-//				break;
-//
-//			//DEPRECATED
-//			//Array: Maximum Temperature (For LCD Display). Values are 16-bit unsigned integer in Celsius(C). Period: 1s
-//			//case ARR_BASE + 2:
-//			//
-//			//	tempInt32 = CAN_rx_data[6] << 8 | CAN_rx_data[7];
-//			//
-//			//	UpdateScreenParameter(ARRAY_MAXTEMP_XPOS, ARRAY_MAXTEMP_YPOS, tempInt32, (uint32_t) (tempInt32 / 10) % 10);
-//			//
-//			//	XBeeTransmitCan(&CAN_rx_msg);
-//			//
-//			//	break;
-//
-//			//Battery: Faults, Battery High and Battery Low (For Dashboard Indicator)
-//			case BATT_BASE + 2:
-//
-//				//Turn on LEDs if the appropriate battery fault exists.
-//
-//				//Battery Low:	A0
-//				//Battery Full: A1
-//				//Battery Communications Fault: A4
-//				//Battery charge over-current: A6
-//				//Battery discharge over-current: A7
-//				//Battery over-temperature: A8
-//				//Battery under-voltage: A9
-//				//Battery over-voltage: A10
-//
-//				GPIOA->BSRR = (CAN_rx_data[6] & 0x3) || \
-//							( ( (CAN_rx_data[5] >> 2) & 0x1) << 4 ) || \
-//							( ( (CAN_rx_data[5] >> 4) & 0x1F) << 6);
-//
-//				/*
-//				//A10: Check if the high voltage bit is set, meaning battery is full
-//				if ( (CAN_rx_data[6] >> 1) & 0x1)
-//				{
-//					//Reset pp;in A10, turn on LED
-//					GPIOA->BSRR = 0x1 << 10;
-//				}
-//
-//				//A9: Check if the low voltage bit is set, meaning battery is low
-//				if ( (CAN_rx_data[6] ) & 0x1 )
-//				{
-//					//Reset pin A9, turn on LED
-//					GPIOA->BSRR = 0x1 << 9;
-//				}
-//
-//				//A1: battery over-temperature fault
-//				if ( ( CAN_rx_data[5] >> 5 ) & 0x1 )
-//				{
-//					//Reset pin A1, turn on LED
-//					GPIOA->BSRR = 0x1 << 1;
-//				}
-//
-//				//A4: battery discharge over-current fault
-//				if ( ( CAN_rx_data[5] >> 4 ) & 0x1 )
-//				{
-//					//Reset pin A4, turn on LED
-//					GPIOA->BSRR = 0x1 << 4;
-//				}
-//
-//				//A6: battery charge over-current fault
-//				if ( ( CAN_rx_data[5] >> 3 ) & 0x1 )
-//				{
-//					//Reset pin A6, turn on LED
-//					GPIOA->BSRR = 0x1 << 6;
-//				}
-//
-//				//A8: battery over-voltage fault
-//				if ( ( CAN_rx_data[5] >> 7 ) & 0x1 )
-//				{
-//					//Reset pin A8, turn on LED
-//					GPIOA->BSRR = 0x1 << 8;
-//				}
-//
-//				//A7: battery under-voltage fault
-//				if ( ( CAN_rx_data[5] >> 6 ) & 0x1 )
-//				{
-//					//Reset pin A7, turn on LED
-//					GPIOA->BSRR = 0x1 << 7;
-//				}
-//
-//				//A11: Communications Fault
-//				if ( (CAN_rx_data[5] >> 2) & 0x1)
-//				{
-//					//Reset pin A11: turn on LED
-//					GPIOA->BSRR = 0x1 << 11;
-//				}
-//
-//				//XBeeTransmitCan(&newCanMsg);
-//				*/
-//
-//				break;
-//		}
 	}
 
     /* USER CODE END WHILE */

@@ -25,28 +25,28 @@ Header file containing all constants and function declarations to the LCD
 // SOC
 #define SOC_XPOS 0
 #define SOC_YPOS 0
-#define SOC_DATA_XPOS 7
+#define SOC_DATA_XPOS 15
 #define SOC_DATA_YPOS 0
 #define SOC_UNIT_XPOS 37
 #define SOC_UNIT_YPOS 0
 // Cruise Control Set
 #define CRUISE_XPOS 0
 #define CRUISE_YPOS 3
-#define CRUISE_DATA_XPOS 23
+#define CRUISE_DATA_XPOS 15
 #define CRUISE_DATA_YPOS 3
 #define CRUISE_UNIT_XPOS 32
 #define CRUISE_UNIT_YPOS 3
 // Vehicle Velocity (Motor Speed)
 #define SPEED_XPOS 0
 #define SPEED_YPOS 6
-#define SPEED_DATA_XPOS 23
+#define SPEED_DATA_XPOS 15
 #define SPEED_DATA_YPOS 6
 #define SPEED_UNIT_XPOS 32
 #define SPEED_UNIT_YPOS 6
 // Regen
 #define REGEN_XPOS 0
 #define REGEN_YPOS 9
-#define REGEN_DATA_XPOS 23
+#define REGEN_DATA_XPOS 15
 #define REGEN_DATA_YPOS 9
 #define REGEN_UNIT_XPOS 37
 #define REGEN_UNIT_YPOS 9
@@ -54,9 +54,64 @@ Header file containing all constants and function declarations to the LCD
 /* Page 1 */
 
 /* Page 2 */
+// Motor Current
+#define MOTOR_CURRENT_XPOS 0
+#define MOTOR_CURRENT_YPOS 0
+#define MOTOR_CURRENT_DATA_XPOS 15
+#define MOTOR_CURRENT_DATA_YPOS 0
+#define MOTOR_CURRENT_UNIT_XPOS 37
+#define MOTOR_CURRENT_UNIT_YPOS 0
+// Array Current
+#define ARRAY_CURRENT_XPOS 0
+#define ARRAY_CURRENT_YPOS 3
+#define ARRAY_CURRENT_DATA_XPOS 15
+#define ARRAY_CURRENT_DATA_YPOS 3
+#define ARRAY_CURRENT_UNIT_XPOS 37
+#define ARRAY_CURRENT_UNIT_YPOS 3
+// Low Voltage Current
+#define LV_CURRENT_XPOS 0
+#define LV_CURRENT_YPOS 6
+#define LV_CURRENT_DATA_XPOS 15
+#define LV_CURRENT_DATA_YPOS 6
+#define LV_CURRENT_UNIT_XPOS 37
+#define LV_CURRENT_UNIT_YPOS 6
+// BUS Current (Total)
+#define BUS_CURRENT_XPOS 0
+#define BUS_CURRENT_YPOS 9
+#define BUS_CURRENT_DATA_XPOS 15
+#define BUS_CURRENT_DATA_YPOS 9
+#define BUS_CURRENT_UNIT_XPOS 37
+#define BUS_CURRENT_UNIT_YPOS 9
 
 /* Page 3 */
-
+// Pack Temperature
+#define PACK_TEMP_XPOS 0
+#define PACK_TEMP_YPOS 0
+#define PACK_TEMP_DATA_XPOS 15
+#define PACK_TEMP_DATA_YPOS 0
+#define PACK_TEMP_UNIT_XPOS 37
+#define PACK_TEMP_UNIT_YPOS 0
+// Pack Voltage
+#define PACK_VOLT_XPOS 0
+#define PACK_VOLT_YPOS 3
+#define PACK_VOLT_DATA_XPOS 15
+#define PACK_VOLT_DATA_YPOS 3
+#define PACK_VOLT_UNIT_XPOS 37
+#define PACK_VOLT_UNIT_YPOS 3
+// Voltage of Lowest Charged Cell
+#define CELL_LV_XPOS 0
+#define CELL_LV_YPOS 6
+#define CELL_LV_DATA_XPOS 15
+#define CELL_LV_DATA_YPOS 6
+#define CELL_LV_UNIT_XPOS 37
+#define CELL_LV_UNIT_YPOS 6
+// Voltage of Lowest Charged Cell
+#define CELL_HV_XPOS 0
+#define CELL_HV_YPOS 9
+#define CELL_HV_DATA_XPOS 15
+#define CELL_HV_DATA_YPOS 9
+#define CELL_HV_UNIT_XPOS 37
+#define CELL_HV_UNIT_YPOS 9
 
 /* Other Definitions */
 #define PAGE_0 0
@@ -200,8 +255,9 @@ void UpdateScreenTitles(uint8_t pageNum);
  * @Param y: The y value of the parameter on the screen
  * @Param integerValue: The integer value of the parameter(Between -999 to 999)
  * @Param decValue: The decimal component of the parameter
+ * @param decimal_en: 1 if decimal should be included; 0 otherwise.
  */
-void UpdateScreenParameter(uint8_t x, uint8_t y, int32_t integerValue, uint8_t decValue);
+void UpdateScreenParameter(uint8_t x, uint8_t y, int32_t integerValue, uint8_t decValue, uint8_t decimal_en);
 /**
  * Periodically called to change the value of the Charge or Speed display bar
  * @Param num: The number to be represented
@@ -223,11 +279,12 @@ void OutputString(char Str[], uint8_t starting_x, uint8_t starting_y);
  * The output can take any value from '-999.9' to ' 999.9'
  * @Param num: The integer portion of the number to be displayed
  * @Param dec: The decimal portion of the number to be displayed
+ * @param decimal_en: 1 if decimal should be included; 0 otherwise.
  * @Param x: x-coordinate to write the character
  * @Param y: y-coordinate to write the character
  * Returns: nothing
  */
-void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y);
+void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t decimal_en, uint8_t x, uint8_t y);
 /**
  * A Delay with a value of ~1us
  * @Param counts: Number of microseconds
