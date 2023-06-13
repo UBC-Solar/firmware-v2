@@ -384,6 +384,11 @@ void UpdateScreenTitles(uint8_t pageNum) {
 			OutputString("%", REGEN_UNIT_XPOS, REGEN_UNIT_YPOS);
 			break;
 		case PAGE_1:
+			/* Titles */
+			OutputString("LV WARN", LV_WARN_XPOS, LV_WARN_YPOS);
+			OutputString("HV WARN", HV_WARN_XPOS, HV_WARN_YPOS);
+			OutputString("LT_WARN", LT_WARN_XPOS, LT_WARN_YPOS);
+			OutputString("HT_WARN", HT_WARN_XPOS, HT_WARN_YPOS);
 			break;
 		case PAGE_2:
 			/* Titles */

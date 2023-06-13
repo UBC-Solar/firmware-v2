@@ -49,6 +49,7 @@
 #define ARR_BASE 0x700
 #define MCB_BASE 0x400
 #define LV_BASE 0x450
+#define FAULTS 0x622
 
 #define CRUISE_TARGET 234 // Placeholder values
 #define REGEN 543 // Placeholder values
@@ -62,6 +63,8 @@
 #define PAGE_3 3
 
 #define TIMEOUT 10
+
+#define GETBIT(var, bit)	(((var) >> (bit)) & 1) // gives bit position
 
 /* USER CODE END PM */
 
@@ -89,6 +92,8 @@ union {
 	float float_var;
 	uint8_t chars[4];
 } u;
+
+uint8_t recent_warnings[4]; // [LV Warn, HV Warn, LT Warn, HT Warn]
 
 /* USER CODE END PV */
 
@@ -121,6 +126,27 @@ void InitLEDs(void)
 
 	GPIOA->BRR = 0xFFFF;
 
+}
+
+/**
+ * Called when warning CAN message received
+ * Updates recent_warnings array with latest warnings
+ */
+void parse_warnings(void)
+{
+	uint8_t temp_byte = CAN_rx_data[1]; // Contains bits 8-15, 15 14 13 12 11 10 9 8
+	uint8_t low_voltage_warning = GETBIT(temp_byte, 6);
+	uint8_t high_voltage_warning = GETBIT(temp_byte, 7);
+	uint8_t low_temperature_warning = GETBIT(temp_byte, 8);
+
+	temp_byte = CAN_rx_data[2]; // Contains bits 16-23, 23 22 21 20 19 18 17 16
+	uint8_t high_temperature_warning = GETBIT(temp_byte, 0);
+
+	/* Update Warnings */
+	recent_warnings[0] = low_voltage_warning;
+	recent_warnings[1] = high_voltage_warning;
+	recent_warnings[2] = low_temperature_warning;
+	recent_warnings[3] = high_temperature_warning;
 }
 
 /* USER CODE END 0 */
@@ -295,6 +321,11 @@ int main(void)
 							OutputString("OFF", REGEN_DATA_XPOS, REGEN_DATA_YPOS); // Write "OFF"
 						}
 						break;
+					case FAULTS: ;
+						/* ADD recent Warning on bottom line of page 0 */
+						parse_warnings();
+						/* Add code to update page 0 bottom line */
+
 					default:
 						// CAN message read is not part of the current page, Ignore.
 						break;
@@ -305,6 +336,46 @@ int main(void)
 				UpdateScreenTitles(PAGE_1);
 				switch(received_CAN_ID)
 				{
+					case (FAULTS): ; // need semicolon as have declaration after colon :
+						/* Check which warning message
+						 * Bit 13 = Low Voltage Warning
+						 * Bit 14 = High Voltage Warning
+						 * Bit 15 = Low Temperature Warning
+						 * Bit 16 = High Temperature Warning
+						 */
+
+						parse_warnings();
+
+						if (recent_warnings[0]) { // Low Voltage Warning
+							OutputString("     ", LV_WARN_DATA_XPOS, LV_WARN_DATA_YPOS); // Clear
+							OutputString("YES", LV_WARN_DATA_XPOS, LV_WARN_DATA_YPOS); // Write "YES"
+						} else {
+							OutputString("     ", LV_WARN_DATA_XPOS, LV_WARN_DATA_YPOS); // Clear
+							OutputString("---", LV_WARN_DATA_XPOS, LV_WARN_DATA_YPOS); // Write "---"
+						}
+						if (recent_warnings[1]) { // High Voltage Warning
+							OutputString("     ", HV_WARN_DATA_XPOS, HV_WARN_DATA_YPOS); // Clear
+							OutputString("YES", HV_WARN_DATA_XPOS, HV_WARN_DATA_YPOS); // Write "YES"
+						} else {
+							OutputString("     ", HV_WARN_DATA_XPOS, HV_WARN_DATA_YPOS); // Clear
+							OutputString("---", HV_WARN_DATA_XPOS, HV_WARN_DATA_YPOS); // Write "---"
+						}
+						if (recent_warnings[2]) { // Low Temperature Warning
+							OutputString("     ", LT_WARN_DATA_XPOS, LT_WARN_DATA_YPOS); // Clear
+							OutputString("YES", LT_WARN_DATA_XPOS, LT_WARN_DATA_YPOS); // Write "YES"
+						} else {
+							OutputString("     ", LT_WARN_DATA_XPOS, LT_WARN_DATA_YPOS); // Clear
+							OutputString("---", LT_WARN_DATA_XPOS, LT_WARN_DATA_YPOS); // Write "---"
+						}
+						if (recent_warnings[3]) { // High Temperature Warning
+							OutputString("     ", HT_WARN_DATA_XPOS, HT_WARN_DATA_YPOS); // Clear
+							OutputString("YES", HT_WARN_DATA_XPOS, HT_WARN_DATA_YPOS); // Write "YES"
+						} else {
+							OutputString("     ", HT_WARN_DATA_XPOS, HT_WARN_DATA_YPOS); // Clear
+							OutputString("---", HT_WARN_DATA_XPOS, HT_WARN_DATA_YPOS); // Write "---"
+						}
+
+						break;
 					default:
 						// CAN message read is not part of the current page, Ignore.
 						break;

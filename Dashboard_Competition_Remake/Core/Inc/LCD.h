@@ -52,6 +52,27 @@ Header file containing all constants and function declarations to the LCD
 #define REGEN_UNIT_YPOS 9
 
 /* Page 1 */
+// Warnings
+// Low Voltage Warning
+#define LV_WARN_XPOS 0
+#define LV_WARN_YPOS 0
+#define LV_WARN_DATA_XPOS 32
+#define LV_WARN_DATA_YPOS 0
+// High Voltage Warning
+#define HV_WARN_XPOS 0
+#define HV_WARN_YPOS 3
+#define HV_WARN_DATA_XPOS 32
+#define HV_WARN_DATA_YPOS 3
+// Low Temperature Warning
+#define LT_WARN_XPOS 0
+#define LT_WARN_YPOS 6
+#define LT_WARN_DATA_XPOS 32
+#define LT_WARN_DATA_YPOS 6
+// High Temperature Warning
+#define HT_WARN_XPOS 0
+#define HT_WARN_YPOS 9
+#define HT_WARN_DATA_XPOS 32
+#define HT_WARN_DATA_YPOS 9
 
 /* Page 2 */
 // Motor Current
