@@ -27,28 +27,28 @@ Header file containing all constants and function declarations to the LCD
 #define SOC_YPOS 0
 #define SOC_DATA_XPOS 15
 #define SOC_DATA_YPOS 0
-#define SOC_UNIT_XPOS 37
+#define SOC_UNIT_XPOS 38
 #define SOC_UNIT_YPOS 0
 // Cruise Control Set
 #define CRUISE_XPOS 0
 #define CRUISE_YPOS 3
 #define CRUISE_DATA_XPOS 15
 #define CRUISE_DATA_YPOS 3
-#define CRUISE_UNIT_XPOS 32
+#define CRUISE_UNIT_XPOS 35
 #define CRUISE_UNIT_YPOS 3
 // Vehicle Velocity (Motor Speed)
 #define SPEED_XPOS 0
 #define SPEED_YPOS 6
 #define SPEED_DATA_XPOS 15
 #define SPEED_DATA_YPOS 6
-#define SPEED_UNIT_XPOS 32
+#define SPEED_UNIT_XPOS 35
 #define SPEED_UNIT_YPOS 6
 // Regen
 #define REGEN_XPOS 0
 #define REGEN_YPOS 9
 #define REGEN_DATA_XPOS 15
 #define REGEN_DATA_YPOS 9
-#define REGEN_UNIT_XPOS 37
+#define REGEN_UNIT_XPOS 38
 #define REGEN_UNIT_YPOS 9
 
 /* Page 1 */

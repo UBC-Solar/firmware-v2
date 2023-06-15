@@ -181,7 +181,7 @@ int main(void)
    */
 
   // Page initialized to Page 0
-  uint8_t current_page = 0;
+  uint8_t current_page = 2;
 
   /* USER CODE END Init */
 
@@ -236,13 +236,14 @@ int main(void)
 		HAL_Delay(1000);
 
 	// Check if message is available
-	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
+//	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
+	if (1)
 	{
 		// Populate CAN header and data variables (CAN_rx_header/data is updated respectively)
-		HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
+		//HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
 
-		uint16_t received_CAN_ID = (uint16_t) CAN_rx_header.StdId;
-//		uint16_t received_CAN_ID = 0x503;
+//		uint16_t received_CAN_ID = (uint16_t) CAN_rx_header.StdId;
+		uint16_t received_CAN_ID = 0x622;
 
 		/* Check for CAN message that is incoming to change the page
 		 * This CAN message comes from the MCB
@@ -280,6 +281,10 @@ int main(void)
 			current_page = current_page + 1; // Increment page
 			if (current_page == NUM_PAGES) current_page = 0; // Reset to 0 if changing from last page
 			button_pressed = FALSE; // Set back to False
+		}
+
+		if (received_CAN_ID == FAULTS) {
+			// Add parse faults function, and output to GPIO
 		}
 
 		// Switch by page
@@ -343,7 +348,7 @@ int main(void)
 						 * Bit 15 = Low Temperature Warning
 						 * Bit 16 = High Temperature Warning
 						 */
-
+						CAN_rx_data[1] = 64; // to toggle high voltage warning high
 						parse_warnings();
 
 						if (recent_warnings[0]) { // Low Voltage Warning

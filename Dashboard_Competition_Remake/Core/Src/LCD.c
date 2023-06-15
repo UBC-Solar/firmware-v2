@@ -369,6 +369,7 @@ void DisplayScreen(void)
  * @Param pageNum: The current page number
  */
 void UpdateScreenTitles(uint8_t pageNum) {
+	ClearScreen();
 	switch(pageNum)
 	{
 		case PAGE_0:
@@ -387,15 +388,15 @@ void UpdateScreenTitles(uint8_t pageNum) {
 			/* Titles */
 			OutputString("LV WARN", LV_WARN_XPOS, LV_WARN_YPOS);
 			OutputString("HV WARN", HV_WARN_XPOS, HV_WARN_YPOS);
-			OutputString("LT_WARN", LT_WARN_XPOS, LT_WARN_YPOS);
-			OutputString("HT_WARN", HT_WARN_XPOS, HT_WARN_YPOS);
+			OutputString("LT WARN", LT_WARN_XPOS, LT_WARN_YPOS);
+			OutputString("HT WARN", HT_WARN_XPOS, HT_WARN_YPOS);
 			break;
 		case PAGE_2:
 			/* Titles */
-			OutputString("MTR_C", MOTOR_CURRENT_XPOS, MOTOR_CURRENT_YPOS);
-			OutputString("ARR_C", ARRAY_CURRENT_XPOS, ARRAY_CURRENT_YPOS);
-			OutputString("LV_C", LV_CURRENT_XPOS, LV_CURRENT_YPOS);
-			OutputString("BUS_C", BUS_CURRENT_XPOS, BUS_CURRENT_YPOS);
+			OutputString("MTR C", MOTOR_CURRENT_XPOS, MOTOR_CURRENT_YPOS);
+			OutputString("ARR C", ARRAY_CURRENT_XPOS, ARRAY_CURRENT_YPOS);
+			OutputString("LV C", LV_CURRENT_XPOS, LV_CURRENT_YPOS);
+			OutputString("BUS C", BUS_CURRENT_XPOS, BUS_CURRENT_YPOS);
 			/* Units */
 			OutputString("%", MOTOR_CURRENT_UNIT_XPOS, MOTOR_CURRENT_UNIT_YPOS);
 			OutputString("A", ARRAY_CURRENT_UNIT_XPOS, ARRAY_CURRENT_UNIT_YPOS);
@@ -404,10 +405,10 @@ void UpdateScreenTitles(uint8_t pageNum) {
 			break;
 		case PAGE_3:
 			/* Titles */
-			OutputString("PK_T", PACK_TEMP_XPOS, PACK_TEMP_YPOS);
-			OutputString("PK_V", PACK_VOLT_XPOS, PACK_VOLT_YPOS);
-			OutputString("CL_LV", CELL_LV_XPOS, CELL_LV_YPOS);
-			OutputString("CL_HV", CELL_HV_XPOS, CELL_HV_YPOS);
+			OutputString("PK T", PACK_TEMP_XPOS, PACK_TEMP_YPOS);
+			OutputString("PK V", PACK_VOLT_XPOS, PACK_VOLT_YPOS);
+			OutputString("CL LV", CELL_LV_XPOS, CELL_LV_YPOS);
+			OutputString("CL HV", CELL_HV_XPOS, CELL_HV_YPOS);
 			/* Units */
 			OutputString("C", PACK_TEMP_UNIT_XPOS, PACK_TEMP_UNIT_YPOS);
 			OutputString("V", PACK_VOLT_UNIT_XPOS, PACK_VOLT_UNIT_XPOS);
