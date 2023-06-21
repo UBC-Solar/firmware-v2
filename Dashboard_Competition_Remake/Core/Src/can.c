@@ -32,11 +32,11 @@ void CanFilterSetup()
 	// Use mask and list mode to filter IDs from the CAN ID BOM
 
 	// Filter for 0x500 and 0x600 IDs
-    CAN_filter0.FilterIdHigh = (uint16_t) (0x501 << 5);
-    CAN_filter0.FilterMaskIdHigh = (uint16_t) (0x7F5 << 5);
+    CAN_filter0.FilterIdHigh = (uint16_t) (0);
+    CAN_filter0.FilterMaskIdHigh = (uint16_t) (0);
 
-    CAN_filter0.FilterIdLow = (uint16_t) (0x620 << 5);
-    CAN_filter0.FilterMaskIdLow = (uint16_t) (0x7F8 << 5);
+    CAN_filter0.FilterIdLow = (uint16_t) (0);
+    CAN_filter0.FilterMaskIdLow = (uint16_t) (0);
 
     CAN_filter0.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     CAN_filter0.FilterBank = (uint32_t) 0;
@@ -45,11 +45,11 @@ void CanFilterSetup()
     CAN_filter0.FilterActivation = CAN_FILTER_ENABLE;
 
     // Remaining IDs filtered with list mode
-    CAN_filter1.FilterIdHigh = (uint16_t) (0x502 << 5);
-    CAN_filter1.FilterMaskIdHigh = (uint16_t) (0x401 << 5);
+    CAN_filter1.FilterIdHigh = (uint16_t) (0);
+    CAN_filter1.FilterMaskIdHigh = (uint16_t) (0);
 
-    CAN_filter1.FilterIdLow = (uint16_t) (0x401 << 5);
-    CAN_filter1.FilterMaskIdLow = (uint16_t) (0x401 << 5);
+    CAN_filter1.FilterIdLow = (uint16_t) (0);
+    CAN_filter1.FilterMaskIdLow = (uint16_t) (0);
 
     CAN_filter1.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     CAN_filter1.FilterBank = (uint32_t) 1;
